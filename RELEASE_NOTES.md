@@ -1,45 +1,44 @@
-## 阅读 1.0 · Android 4.4–5.1 移植首版
+## 阅读 1.0.26 · API19 版接入 FnReader 同步（versionCode 19002）
 
-Legado（阅读）`3.23.110211` 的 API19 移植版，**minSdk 19 / targetSdk 30**，单包覆盖 Android 4.4–5.1（API 19–22）。
+Legado（阅读）API19 移植版的第二次发版：**新包名** + **FnReader 服务器同步**，minSdk 19 / targetSdk 30，单包覆盖 Android 4.4–5.1（API 19–22）。
+
+### 这一版改了什么
+
+- **新包名 `io.legado.api19`**：可以和官方「阅读」同时装着，不再互相顶掉，也不用手动卸载
+- **我的 → 书源管理 下面一行新增「FnReader 服务器」**：按 FnReader「App 同步接口」重新设计，一集菜单收齐所有接法
+- 顶部「同步」= `GET /api/m/sync`，直接显示服务器版本、服务器时间、书架数、进度条数、书源总数与启用数
+- 一集菜单七条：①导入书源（`sources.json?all=1`）②复制同步地址 ③回传阅读进度（`progress/batch`）④WebDAV（`/dav/backup/`、`/dav/books/`）⑤HTTP API 接口表 ⑥网页书架 ⑦接入手册（`APP同步接口.md` / `APK接入.md` / `手机接入API.md`）
+- **地址自动纠正**：填飞牛网页地址（`http://IP:5666/app/legado-web`）或只填 IP，会依次试 `填的地址 → 同主机:1122 → 加 /app/legado-web`，哪个通就把哪个写回输入框
+- **失败原因说人话**：令牌不对 / 地址是网页 / 服务没起来 都有中文提示，并附「试过：<最后尝试的URL>」
+- **修好了「导入书源一条都进不来」**：之前点①会直接退出（网络导入页只认 `legado://import/bookSource?src=…`），现在能一次把服务器上 1000+ 个书源全导进来
+- 应用内「更新日志」写进本版内容；「检查更新」指向本仓库 Release，按 tag 里的 versionCode 比较
 
 ### 安装
 
-1. 先卸载官方「阅读」（包名同为 `io.legado.app`，否则签名冲突装不上）
-2. 安装 `yuedu_app_1.0.26.110803.apk`
-3. 打开应用 → 我的 → 书源管理 → 网络导入，粘贴书源链接即可
+1. 直接安装 `yuedu_app_1.0.26.110806.apk`（新包名，可与官方版共存，无需卸载任何东西）
+2. 打开应用 → 我的 → **FnReader 服务器**
+3. 服务器地址填 `http://<NAS_IP>:1122`（FnReader 手机接口端口；填 5666 的网页地址也会被自动纠正），访问令牌填 FnReader「设置 → 手机接入」里那串
+4. 点「同步」确认连上；再点「① 导入书源」把服务器书源全量导入
 
 ### 产物信息
 
 | 项 | 值 |
 | --- | --- |
-| 包名 | `io.legado.app` |
-| versionCode / versionName | 19001 / 1.0.26.110803 |
+| 包名 | `io.legado.api19` |
+| versionCode / versionName | 19002 / 1.0.26.110806 |
 | minSdk / targetSdk | 19 / 30 |
-| 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
+| 签名 | v1 (JAR) + v2，`apksigner verify` 通过（证书 `CN=FnReader YueDu`） |
 | ABI | armeabi-v7a |
-| DEX | 5 个（MultiDex） |
-| 体积 | 18.6 MB |
-| SHA256 | `08DE73E02B33C39F7ECB511EF443155CAF77B771E8A826E491D5A2D926EA3BCA` |
+| DEX | MultiDex |
+| 体积 | 约 18.6 MB |
 
-### 主要改动
+### 验证情况
 
-- 构建：minSdk 19 / targetSdk 30、去掉 `versionCode` 对 git 的依赖、固定 v1+v2 双签、限 32 位 ABI、lint 不阻断、`modules/*` minSdk 同步下调
-- 裁剪：移除 Cronet（整包 11 文件 + `cronet.json` + `download.gradle`）、移除 Firebase
-- 网络：新增 `Tls12SocketFactory`（4.4 支持 TLSv1.2 但默认不启用），`SSLContext` 用 `TLS`
-- 框架 API：TTS 四参 `speak` → `speakCompat`；`ACTION_OPEN_DOCUMENT_TREE` 4.4 回退内置文件夹选择器；`android.system.Os`（epub PFD）加 `FileInputStream` 回退
-- 清单：补 `extractNativeLibs` / `usesCleartextTraffic`，5 个三方库 `overrideLibrary`
-- lint `[NewApi]`：15 → 0
-
-### 接飞牛书库
-
-配合 [FnReader](https://github.com/TZYLXS/FnReader) 1.7.1+：在飞牛「阅读」设置页 →「阅读 APK 接入」复制书源链接，
-在本 APK 里网络导入即可搜书、读正文。详见 [docs/飞牛书库接入.md](docs/飞牛书库接入.md)。
+- MuMu 模拟器（Android 12，SDK 32）安装启动、隐私协议、我的页入口位置、`/api/m/sync` 真实服务器连通（FnReader 1.7.25，书架 3 / 进度 3 / 书源 1062 启用 840）均实测通过
+- 地址回退实测：填 `http://10.5.4.70:5666/app/legado-web` 点同步，自动纠正为 `http://10.5.4.70:1122` 并同步成功
+- 导入书源实测：导入页列出 1062 个书源，确认后书源管理显示 1062 条
 
 ### 已知限制
 
-4.4 上这些功能可能不可用（三方库要求 API21+，不影响启动和阅读）：
-ExoPlayer 音频播放、扫码导入书源、zip/epub 的 libarchive 路径。
-
-### 未验证项
-
-本版未做真机复测（手上测试机 adb 掉线）。接上 USB 后可跑 `scripts/verify_device.bat` 安装并抓启动日志。
+- 4.4 真机上这些功能可能不可用（三方库要求 API21+，不影响启动和阅读）：ExoPlayer 音频播放、扫码导入书源、zip/epub 的 libarchive 路径
+- 模拟器为 Android 12，未在 Android 4.4 真机上复测（老机器不在手边）

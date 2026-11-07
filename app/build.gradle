@@ -37,11 +37,12 @@ android {
         }
     }
     defaultConfig {
-        applicationId "io.legado.app"
+        // API19 移植版：独立包名，可与官方「阅读」（io.legado.app）同时安装
+        applicationId "io.legado.api19"
         minSdk 19
         targetSdk 30
         // API19 移植版：版本号不再依赖 git 提交数
-        versionCode 19001
+        versionCode 19002
         versionName version
         multiDexEnabled true
         ndk {

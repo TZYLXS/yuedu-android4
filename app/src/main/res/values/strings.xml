@@ -1136,4 +1136,14 @@
     <string name="keep_enable">Retain Enabled Status</string>
     <string name="preview_image_by_click">Click to preview image</string>
     <string name="default_home_page">Default HomePage</string>
+
+    <string name="fnreader_entry">FnReader Server</string>
+    <string name="fnreader_entry_summary">Sync with fnOS FnReader: shelf, progress, book sources</string>
+    <string name="fnreader_addr_hint">服务器地址，只填 http://IP:端口（FnReader 手机接口默认 1122），如 http://192.168.5.110:1122</string>
+    <string name="fnreader_token_hint">Access token (FnReader -> Settings -> Phone access)</string>
+    <string name="fnreader_save">Save</string>
+    <string name="fnreader_test">Test</string>
+    <string name="fnreader_sync">Sync</string>
+    <string name="fnreader_sync_idle">Not synced yet. Fill in address and token, then tap Sync.</string>
+    <string name="fnreader_methods">Ways to connect (tap one)</string>
 </resources>

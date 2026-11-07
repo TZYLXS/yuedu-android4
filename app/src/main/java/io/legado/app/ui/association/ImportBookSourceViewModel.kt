@@ -30,6 +30,12 @@ import io.legado.app.utils.splitNotBlank
 
 
 class ImportBookSourceViewModel(app: Application) : BaseViewModel(app) {
+
+    companion object {
+        // 只写了「192.168.5.110:5666/api/m/…」这种不带协议的地址
+        private val IP_HOST_REGEX = Regex("^\\d{1,3}(\\.\\d{1,3}){3}(:\\d+)?(/\\S*)?$")
+    }
+
     var isAddGroup = false
     var groupName: String? = null
     val errorLiveData = MutableLiveData<String>()
@@ -162,6 +168,15 @@ class ImportBookSourceViewModel(app: Application) : BaseViewModel(app) {
                     importSourceUrl(mText)
                 }
 
+                mText.startsWith("legado://") || mText.startsWith("legado:", true) -> {
+                    importLegadoLink(mText)
+                }
+
+                // 只填了「主机:端口/路径」的情况，补上协议再走网络导入
+                IP_HOST_REGEX.matches(mText) -> {
+                    importSourceUrl("http://$mText")
+                }
+
                 mText.isUri() -> {
                     val uri = Uri.parse(mText)
                     uri.inputStream(context).getOrThrow().use { inputS ->
@@ -185,6 +200,24 @@ class ImportBookSourceViewModel(app: Application) : BaseViewModel(app) {
         }
     }
 
+    private suspend fun importLegadoLink(link: String) {
+        val uri = Uri.parse(link)
+        val path = uri.path.orEmpty()
+        val src = uri.getQueryParameter("src")
+        when {
+            !path.contains("bookSource", true) ->
+                throw NoStackTraceException("这条链接不是书源导入链接（$path），请用书源类链接")
+            src.isNullOrBlank() ->
+                throw NoStackTraceException("链接里没有 src 参数")
+            src.startsWith("legado:", true) ->
+                throw NoStackTraceException("链接里的 src 还是导入链接，无法连续解析")
+            src.isAbsUrl() ->
+                importSourceUrl(src)
+            else ->
+                throw NoStackTraceException("src 不是可下载地址：$src")
+        }
+    }
+
     private suspend fun importSourceUrl(url: String) {
         okHttpClient.newCallResponseBody {
             if (url.endsWith("#requestWithoutUA")) {
@@ -193,14 +226,24 @@ class ImportBookSourceViewModel(app: Application) : BaseViewModel(app) {
             } else {
                 url(url)
             }
-        }.unCompress {
-            GSON.fromJsonArray<BookSource>(it).getOrThrow().let { list ->
-                val source = list.firstOrNull() ?: return@let
-                if (source.bookSourceUrl.isEmpty()) {
-                    throw NoStackTraceException("不是书源")
-                }
-                allSources.addAll(list)
+        }.unCompress { inputStream ->
+            // 官方书源包是数组；FnReader 这类自建服务也可能只给一个对象，两种都收
+            val text = String(inputStream.readBytes(), Charsets.UTF_8).trim()
+            val list = when {
+                text.isJsonArray() -> GSON.fromJsonArray<BookSource>(text).getOrThrow()
+                text.isJsonObject() -> listOf(GSON.fromJsonObject<BookSource>(text).getOrThrow())
+                text.startsWith("<") || text.contains("<html", true) ->
+                    throw NoStackTraceException("地址返回的是网页而不是书源 JSON，多为缺少令牌或未登录，请换带 token 的地址")
+                text.isEmpty() ->
+                    throw NoStackTraceException("地址返回了空内容：$url")
+                else ->
+                    throw NoStackTraceException("返回内容不是书源 JSON（前 60 字）：${text.take(60)}")
             }
+            val source = list.firstOrNull() ?: throw NoStackTraceException("不是书源")
+            if (source.bookSourceUrl.isEmpty()) {
+                throw NoStackTraceException("不是书源")
+            }
+            allSources.addAll(list)
         }
     }
 

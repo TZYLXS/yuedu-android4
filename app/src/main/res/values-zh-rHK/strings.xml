@@ -1133,4 +1133,14 @@
     <string name="export_all_use_book_source">导出所有书的书源</string>
     <string name="keep_enable">保留启用状态</string>
     <string name="preview_image_by_click">点击预览图片</string>
+
+    <string name="fnreader_entry">FnReader 伺服器</string>
+    <string name="fnreader_entry_summary">與飛牛 FnReader 同步：書架、進度、書源</string>
+    <string name="fnreader_addr_hint">服务器地址，只填 http://IP:端口（FnReader 手机接口默认 1122），如 http://192.168.5.110:1122</string>
+    <string name="fnreader_token_hint">存取權杖（FnReader 設定 → 手機接入）</string>
+    <string name="fnreader_save">儲存</string>
+    <string name="fnreader_test">測試</string>
+    <string name="fnreader_sync">同步</string>
+    <string name="fnreader_sync_idle">還沒同步。填好位址和權杖後點「同步」。</string>
+    <string name="fnreader_methods">接入方式（點一條）</string>
 </resources>
