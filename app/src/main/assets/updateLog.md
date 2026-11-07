@@ -14,15 +14,17 @@
 
 **2026/11/08**
 
+* 版本号统一改为 **1.2**（versionCode 10200），发版号从 `v1.2` 起算
 * 新包名 `io.legado.api19`：可与官方「阅读」同时安装，不再互相顶掉
 * 我的 → 书源管理下面一行：新增「FnReader 服务器」，按 FnReader「App 同步接口」重新设计
 * 弹窗顶部「同步」直接调 `GET /api/m/sync`，显示服务器版本、时间、书架数、进度数、书源总数与启用数
+* 「同步」同时把服务器书架与阅读进度合并进本地：书架上没有的书补进来，服务器进度比本地新才覆盖
 * 一集菜单：导入书源（`sources.json?all=1`）、复制同步地址、回传进度（`progress/batch`）、WebDAV、HTTP API、网页书架、接入手册
 * 服务器地址只填 `http://IP:端口` 即可；复制成飞牛网页地址（`http://IP:5666/app/legado-web`）也能自动纠正到 FnReader 自己的端口（默认 1122）
 * 令牌不对、地址填成网页、服务没起来这三种失败会直接给中文提示，不再只显示「格式不对」
 * 导入书源改为走 `legado://import/bookSource?src=…`，一次把服务器上 1000+ 个书源全导进来（之前点「导入书源」会直接退出、书源管理里一条都没有）
 * 网络导入：单个书源对象也能导；`legado://import/bookSource?src=…` 链接直接粘；`IP:端口` 自动补 `http://`
-* 应用内更新改为读本仓库 `TZYLXS/yuedu-android4` 的 Release，按 tag 里的 versionCode 比较
+* 应用内更新改为读本仓库 `TZYLXS/yuedu-android4` 的 Release，按 tag 版本（`v1.2` → 10200）与 versionCode 比较
 
 **2023/11/01**
 
