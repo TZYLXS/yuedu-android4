@@ -1,5 +1,7 @@
 # 阅读 · Legado Android 4.4–5.1 移植版
 
+> 交流群：778213624/339426057/1063542188
+
 把 [Legado（阅读）](https://github.com/gedoor/legado) 降到老安卓设备能用的版本：
 **minSdk 19 / targetSdk 30，单包覆盖 Android 4.4 – 5.1（API 19–22）**，
 保留主体功能（书架、书源、搜索、阅读、TTS、备份、WebDAV），并可直接接飞牛 fnOS 的
