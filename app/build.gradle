@@ -13,7 +13,7 @@ static def releaseTime() {
 // API19 移植版：不再依赖 git 提交数，版本号固定，便于无 .git 的 CI 环境构建
 def appName = "yuedu"
 // 版本号固定 1.2：发版号从 1.2 起算（tag v1.2、v1.3…），不再带时间戳
-def version = "1.3"
+def version = "1.4"
 
 android {
     compileSdk = compile_sdk_version
@@ -43,7 +43,7 @@ android {
         minSdk 19
         targetSdk 30
         // API19 移植版：版本号不再依赖 git 提交数
-        versionCode 10300
+        versionCode 10400
         versionName version
         multiDexEnabled true
         ndk {
