@@ -81,7 +81,7 @@ lint -appRelease:
 - 推书 `origin` 填书源真实 `bookSourceUrl`、`originName` 填源名；缺 origin 时按 `bookUrl` 的 host 匹配同宿主书源，再退按源名匹配，都不中才留空
 - 搜索页 / 临时跳转不算详情页，跳过不推
 - ⑧ 缓存补 `layout:"legado"` + `chapters[].file` + `chapters[].raw`（`.nb` 原文）+ `origin`
-- 封面本机没有就现下（Referer 先用图片域名、403 再退书源地址）转 base64 一起推
+- 封面本机没有、或服务端封面仍是源站外链时就现下补推（Referer 先不带再退图片域名 / 书源地址，压过 gzip 的解一层）转 base64 一起推
 - ⑨ 改/删书源都带 `lastUpdateTime`，本机删源推 `deleted`，服务端更进的版本 `pull` 回本地覆盖
 - 版本号 1.8 / 10800，minSdk 19 不变；与阅读Pro 1.8 同一份实现
 

@@ -11,7 +11,7 @@ minSdk 19 移植版，包名 `io.legado.api19`，可与阅读Pro、官方版共�
 - 推书 `origin` 填书源真实地址（`bookSourceUrl`），`originName` 填源名；缺 origin 时按 `bookUrl` 的 host 匹配同宿主书源，再退按源名唯一匹配，都不中才留空并报「无匹配书源」
 - 搜索页 / 临时跳转不算详情页，跳过并报「非详情页跳过」
 - ⑧ 缓存按 §16 补 `layout:"legado"` + `chapters[].file` + `chapters[].raw`（`.nb` 原文）+ `origin`
-- 封面本机没有就现下（Referer 先用图片域名、403 再退书源地址），转 base64 一起推，网页端不再白图
+- 封面本机没有、或飞牛那边封面仍是源站外链时就现下补推（Referer 先不带再退图片域名 / 书源地址，服务端压过 gzip 的自动解一层），网页端不再白图；实测 9/9 落到 NAS `covers/`
 - ⑨ 每次改/删书源都带 `lastUpdateTime`，本机删源推 `deleted`，服务端更进的版本 `pull` 回本地覆盖
 
 ### 实测
