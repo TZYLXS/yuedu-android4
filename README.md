@@ -9,7 +9,7 @@
 
 - 底座：`LegadoTeam/legado` tag `3.23.110211`（commit `56c3301dc441c23aaa75bac973943f7469c202be`）
 - 应用名：**阅读**（包名仍为 `io.legado.app`，会和官方版冲突，安装前先卸载官方版）
-- 产物：`dist/yuedu_app_<version>.apk`，v1 + v2 双签，armeabi-v7a，MultiDex
+- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_1.7.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
 - 用途：老平板 / 老手机当纯阅读器
 
 ## 兼容性
@@ -19,8 +19,8 @@
 | minSdkVersion | 19（Android 4.4） |
 | targetSdkVersion | 30 |
 | compileSdkVersion | 34 |
-| versionCode | 19001 |
-| versionName | `1.0.<YYMMDD>` |
+| versionCode | 10700（1.7） |
+| versionName | `1.7` |
 | 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
 | ABI | armeabi-v7a |
 | DEX | 5 个（`multiDexEnabled true` + `MultiDexApplication`） |
@@ -28,13 +28,31 @@
 已构建产物的校验结果：
 
 ```
-package: name='io.legado.app' versionCode='19001' versionName='1.0.26.110803'
+package: name='io.legado.api19' versionCode='10700' versionName='1.7'
 sdkVersion:'19'
 targetSdkVersion:'30'
 application-label:'阅读'
 native-code: 'armeabi-v7a'
 Verifies / v1: true / v2: true
 ```
+
+## 接入 FnReader（我的 → FnReader 服务器，①–⑨）
+
+服务端 FnReader 1.11.0 起，面板里九项功能与阅读Pro 1.7 完全一致：
+
+| 项 | 干什么 | 接口 |
+| --- | --- | --- |
+| ① | 导入书源 | `GET /api/m/sources.json` |
+| ② | 全部同步到飞牛书架（新书自动建、重名跳过、封面一起回传） | `POST /api/m/books` + `/api/m/progress/batch` + `/api/m/cover` |
+| ③ | 打开飞牛阅读网页 | 内置浏览器（4.0 版地址拼 `/app/legado-web`） |
+| ④ | 接入手册 | 内置三份文档 |
+| ⑤ | 手机解析待命 | `/api/m/remote/pending` + `/api/m/remote/result` |
+| ⑥ | 接入书源桥 | 服务端生成的「飞牛书库」源 |
+| ⑦ | 查看软总线 | `GET /api/bus` |
+| ⑧ | 上传本机缓存到飞牛（网页离线读正文，§16） | `POST /api/m/cache`，传 `.nb` 原文，服务端转码落 `cache/<书名>/` |
+| ⑨ | 书源双向同步（最后一次修改为准，§17） | 首次 `POST /api/m/sources` 合并；之后 `POST/GET /api/m/sources/sync` 增量 |
+
+⑧ 单次请求上限 30 MB；⑨ 首次不推「全量 + since=0」（服务端会当整库快照删源，见 `docs/app回传接受规范.md` §9）。
 
 ## 与上游的差异
 

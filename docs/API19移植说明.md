@@ -75,3 +75,13 @@ lint -appRelease:
 - 没有真机复测（手上设备 adb 掉线）。`scripts/verify_device.bat` 可直接在接上 USB 的机器上跑安装 + 启动 + 抓日志。
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
+
+## 1.7（versionCode 10700）：与阅读Pro 同步的 FnReader 1.11.0 适配
+
+4.0 版与 Pro 同构改造，差异只在原有分支上：
+
+- 新增菜单 ⑧ 上传本机缓存到飞牛（`POST /api/m/cache`，传 `.nb` 原文，单本 > 30 MB 跳过）
+- 新增菜单 ⑨ 书源双向同步（首次 `POST /api/m/sources` 合并，之后 `POST/GET /api/m/sources/sync` 按 `lastUpdateTime` 增量）
+- `request()` 加可选读超时（缓存 60s / 书源合并 180s / 增量 120s）
+- 4.0 版自有差异保持不动：`openWebShelf` 拼 `/app/legado-web`、`rawServer` 判 `/app/`、
+  `negativeButton` 用 `requireContext().getString(R.string.cancel)`、`serverBase` 的 path 分支
