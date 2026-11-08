@@ -9,7 +9,7 @@
 
 - 底座：`LegadoTeam/legado` tag `3.23.110211`（commit `56c3301dc441c23aaa75bac973943f7469c202be`）
 - 应用名：**阅读**（包名仍为 `io.legado.app`，会和官方版冲突，安装前先卸载官方版）
-- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_1.8.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
+- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_1.9.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
 - 用途：老平板 / 老手机当纯阅读器
 
 ## 兼容性
@@ -19,8 +19,8 @@
 | minSdkVersion | 19（Android 4.4） |
 | targetSdkVersion | 30 |
 | compileSdkVersion | 34 |
-| versionCode | 10800（1.8） |
-| versionName | `1.8` |
+| versionCode | 10900（1.9） |
+| versionName | `1.9` |
 | 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
 | ABI | armeabi-v7a |
 | DEX | 5 个（`multiDexEnabled true` + `MultiDexApplication`） |
@@ -28,7 +28,7 @@
 已构建产物的校验结果：
 
 ```
-package: name='io.legado.api19' versionCode='10800' versionName='1.8'
+package: name='io.legado.api19' versionCode='10900' versionName='1.9'   # 18.67 MB
 sdkVersion:'19'
 targetSdkVersion:'30'
 application-label:'阅读'
@@ -38,7 +38,7 @@ Verifies / v1: true / v2: true
 
 ## 接入 FnReader（我的 → FnReader 服务器，①–⑨）
 
-服务端 FnReader 1.11.0 起，面板里九项功能与阅读Pro 1.8 完全一致：
+服务端 FnReader 1.11.0 起，面板里九项功能与阅读Pro 1.9 完全一致：
 
 | 项 | 干什么 | 接口 |
 | --- | --- | --- |

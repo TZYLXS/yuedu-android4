@@ -76,6 +76,15 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 1.9（versionCode 10900）：软总线支持 rank 代抓榜单
+
+- 跟进 `docs/APP同步接口.md` §15 每日推荐（`GET /api/daily`）与 `docs/更新日志.md`（服务端 1.11.2）
+- `model/FnReaderRemote.kt` 增加 `"rank"` 任务：抓 `payload.url` 榜单页，用 Jsoup 按起点 / 纵横 / 17K 三套选择器解析，
+  回传 `{source,url,books:[…]}`；反爬页或 0 本回 `ok:false`，服务端自动降级
+- `service/FnReaderBridgeService.kt` 的 `timeoutOf("rank")` = 23 秒
+- §16 缓存同步、§17 书源双向同步（1.8 已实现）本版复核协议无差异，未改代码
+- 版本号 1.9 / 10900，minSdk 19 不变；与阅读Pro 1.9 同一份实现
+
 ## 1.8（versionCode 10800）：origin / 缓存原文 / 书源时间戳修复
 
 - 推书 `origin` 填书源真实 `bookSourceUrl`、`originName` 填源名；缺 origin 时按 `bookUrl` 的 host 匹配同宿主书源，再退按源名匹配，都不中才留空
