@@ -76,6 +76,15 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 1.8（versionCode 10800）：origin / 缓存原文 / 书源时间戳修复
+
+- 推书 `origin` 填书源真实 `bookSourceUrl`、`originName` 填源名；缺 origin 时按 `bookUrl` 的 host 匹配同宿主书源，再退按源名匹配，都不中才留空
+- 搜索页 / 临时跳转不算详情页，跳过不推
+- ⑧ 缓存补 `layout:"legado"` + `chapters[].file` + `chapters[].raw`（`.nb` 原文）+ `origin`
+- 封面本机没有就现下（Referer 先用图片域名、403 再退书源地址）转 base64 一起推
+- ⑨ 改/删书源都带 `lastUpdateTime`，本机删源推 `deleted`，服务端更进的版本 `pull` 回本地覆盖
+- 版本号 1.8 / 10800，minSdk 19 不变；与阅读Pro 1.8 同一份实现
+
 ## 1.7（versionCode 10700）：与阅读Pro 同步的 FnReader 1.11.0 适配
 
 4.0 版与 Pro 同构改造，差异只在原有分支上：
