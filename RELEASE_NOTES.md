@@ -1,71 +1,98 @@
-## 安卓4.0 版 1.4（versionCode 10400）
+## 安卓4.0 版 1.5（versionCode 10500）
 
-Legado（阅读）移植到 **minSdk 19 / targetSdk 30**（Android 4.4+），单包 `yuedu_app_1.4.apk`，包名 `io.legado.api19`，可与 Pro 版、官方版共存安装。
+Legado（阅读）移植到 **minSdk 19 / targetSdk 30**（Android 4.4+），单包 `yuedu_app_1.5.apk`，包名 `io.legado.api19`，可与 Pro 版、官方版共存安装。
 
-### 本版新增：书源桥 + 连接保活
+### 本版主线：按 FnReader 1.7.31 → 1.9.1 的 docs 把「同步」整条链路改安全、改全
 
-FnReader `1.7.30` 在 docs 里给了「给『阅读』APK 用的书源桥」：服务端把书架、书源、缓存打包成**一个**书源（`bookSourceName = 飞牛书库`），搜索 / 详情 / 目录 / 正文全部由飞牛执行。这一版把入口和保活做进客户端。
+服务端从 1.8.1 更新到 1.9.1，`docs/APP同步接口.md` 新增了「外网访问 → 安全要点」（第 10 章）、
+「软总线」（第 11 章）、按类型分开的解析超时（第 11.5 章），以及 App 上传封面与书源（第 13 章）、
+「自动同步：加书即同步」（第 14 章）。1.5 把这些口径对进客户端，与 Pro 版同构。
 
-**⑨ 接入书源桥**（「FnReader 服务器」弹窗新增项）
+**① 安全：令牌只走请求头，不再拼 URL**
 
-- 拉 `GET /api/m/booksource?token=…` 拿服务端实时生成的那份 Legado 书源，走标准 `legado://import/bookSource?src=…` 导入
-- 导入后是一条「飞牛书库」，本机不再需要几百条书源规则：
-  - 搜索 `GET /api/m/legado/search?token=…&key={{key}}&page={{page}}`，规则 `$.books[*]`
-  - 详情 `GET /api/m/legado/book?u=&s=&n=`，不在书架时服务端自动 `upsertBook`（`addedBy:"apk"`）
-  - 目录 `GET /api/m/legado/toc?u=`，章节 url 直接指向 `/api/m/content?url=…&index=i`
-  - 正文 `GET /api/m/content`，规则 `$.paragraphs[*]`
-- 换服务器地址 / 换令牌后，重新点一次 ⑨ 覆盖导入即可
+- `/api/m/info`、`/sync`、`/progress`、`/progress/batch`、`/books`、`/remote/pending`、`/remote/result` 全部只带 `X-Api-Token`
+- 1.4 及以前，`/sync` 与 `/remote/pending` 的地址里带 `?token=…`。URL 会进浏览器历史、反向代理日志、服务端 access log，等于令牌持续明文外泄，这一版彻底去掉
+- 只有「② 复制同步接口地址」仍生成带令牌的链接（给别人用），并注明「这个地址里带令牌，别转发给别人」
+- 地址填的是公网 IP / 域名却用 `http` 时，保存即提示「请用 https，否则令牌在网络上是明文」；`10.` / `127.` / `192.168.` / `172.16–31.` 与 `localhost` 视为内网放行
+- 失败分因提示：401「令牌不对或已被重置」、403、404「地址多了路径」、5xx、超时、找不到主机、连不上端口「服务没起来 / 端口不对 / 防火墙」、自签证书不受信任
 
-**连接保活**
+**② 软总线（第 11 章）**
 
-- 手机解析待命连上后每 **60 秒**心跳一次 `GET /api/m/info`，通知栏显示「**已连接 FnReader 1.7.30　待命中**」，干完活自动回到这个状态
-- 心跳同时校验令牌与地址：令牌被重置、服务没起来、换网段，立刻显示「连不上服务器，重试中」
-- 掉线 3 秒重试，长轮询 `wait=15000`，派单不漏
-- 新增 `RECEIVE_BOOT_COMPLETED` 与 `FnReaderBridgeBootReceiver`：开关开着时**开机自动拉起前台服务**
+- 领任务时带 `id / name / model / ver`，服务端按 id 去重、60 秒内有轮询算在线
+- 弹窗新增 **⑩ 查看软总线**：`GET /api/bus` 列出「设备名　在线/离线　已暂停　代理解析 N 次　v版本」，另显示 `pending` 排队数
+- 状态区与 ⑧ 成功提示都点名「本机已登记到网页 设置 → 软总线」
 
-**顺带修掉**
+**③ 任务超时按类型分开（第 11.5 章）**
 
-- 「① 导入书源」统一为标准 `legado://import/bookSource?src=…` 导入链接（原来直接传 http 地址，`OnLineImportActivity` 读不到 `src` 会静默退出）
+原来统一 45 秒。现在：搜索 18 秒、目录 18 秒、正文 23 秒、其它 20 秒；服务端等目录 20 秒 / 正文 25 秒，
+客户端先一步放弃并回报失败；超时提示带具体秒数。
 
-### 与 1.3 的关系
+**④ ③ 全部同步到飞牛书架：全部推、重名跳过、封面一起回传**
 
-1.3 的手机解析待命（⑧）原样保留：⑨ 让手机不装规则也能读飞牛，⑧ 让飞牛跑不动的源交给手机跑，两者不冲突。
+- 本机书架**每本有书名的书都参与同步**，不再是 1.4 的「飞牛没有这本书就跳过」
+- 飞牛已有同 URL 的书 → 只回传进度；**同名但 URL 不同 → 自动跳过**（书名归一化：去 `《》`、全角空格、所有空白、大小写）
+- 本机同书多源只留一本（计「本机重复 N 本」）
+- 新书走 `POST /api/m/books`（带 `name/author/coverUrl/intro/originName/index/title`），按文档 14.5 **每批 15 本**分批
+- **封面随书回传**：在线封面给 `coverUrl`；本机缓存的封面图读出来转 base64，走 `coverData` + `coverMime`（文档 13 / 14.2），飞牛落盘到 `covers/` 并从 `/api/covers/<文件名>` 直出；超过 3 MB 的图不带
+- 飞牛那边已有这本书但**缺封面**的，也补推一次（按 `bookUrl` 合并），计「补封面 N 本」
+- 进度走 `POST /api/m/progress/batch`，每项带 `name`
+- 结果两行：「全部同步完成：新增 N 本　更新 M 条进度　补封面 X 本　重名跳过 Y 本　本机重复 Z 本」+「飞牛书架共 T 本（已发送 n 本进度，封面随书回传）」
+- 同步点下去立刻显示「全部同步中…（先比对飞牛书架）」，401 单独提示；任何一步非 2xx 写明是哪一步失败与原因
 
-### 从 1.3 升级
+**⑤ 其它**
 
-同签名，直接覆盖安装（versionCode `10400` > `10300`）。书架、书源、进度都在。
+- ⑤ HTTP API 清单补 `POST /books`、`/api/bus`，注明「令牌只放请求头、公网务必 https」
+- 版本号 1.5（versionCode 10500），与阅读Pro 同步
+
+### 与 1.4 的关系
+
+⑨ 书源桥、⑧ 手机解析待命、开机自启、60 秒心跳全部保留，本轮未动。
+
+### 从 1.4 升级
+
+同签名，直接覆盖安装（versionCode `10500` > `10400`）。书架、书源、进度都在。
 
 ### 版本规则
 
 安卓 4.0 版（`TZYLXS/yuedu-android4`）与阅读Pro（`TZYLXS/yuedu-pro`）共用版本号，每次迭代 **+0.1**，满 10 进 1。
-本版两端同为 **1.4 / 10400**，tag `v1.4`。
+本版两端同为 **1.5 / 10500**，tag `v1.5`。
 
 ### 安装
 
-我的 → FnReader 服务器 → 填地址与令牌 → 测试连接/同步 → ⑨ 接入书源桥（或 ① 导入全部书源）→ 需要手机代跑时再开 ⑧。
+我的 → FnReader 服务器 → 填地址（`http://<局域网IP>:1122`）与令牌 → 测试连接 → ③ 全部同步（或 ① 导入全部书源 / ⑨ 书源桥）→ 需要手机代跑时再开 ⑧。
 
 ### 产物信息
 
-| 项 | 值 |
+| 项 | 单包 |
 | --- | --- |
-| 文件 | `yuedu_app_1.4.apk` |
-| 体积 | 19,551,010 B（18.65 MB） |
-| SHA256 | `5E7A2FAB4BFA60A446DF5D3304DBFF256B15B64F977BBB4C14535D4FB8D7D4E3` |
+| 文件 | `yuedu_app_1.5.apk` |
+| 包名 | `io.legado.api19` |
+| ABI | armeabi-v7a |
+| 体积 | 19,562,245 B（18.66 MB） |
+| SHA256 | `FB958B595B8E1C52C5C122A6A8B3D6139AE3649A7D27DBE6EC5C2CF1B7387CED` |
 
-公共参数：包名 `io.legado.api19`、versionName `1.4`、versionCode `10400`、minSdk `19`、targetSdk `30`、
-签名证书 `CN=FnReader YueDu`（SHA-256 `81ce1c10476fa400ed962c4a18b54ae4497581320b1d940d896d62b6c609ef0f`），v1+v2 双签。
+公共参数：versionName `1.5`、versionCode `10500`、minSdk `19`、targetSdk `30`、compileSdk `34`，
+签名证书 `CN=FnReader YueDu`（v1 + v2 双签，SHA-256 `81ce1c10476fa400ed962c4a18b54ae4497581320b1d940d896d62b6c609ef0f`）。
 
-### 验证情况（MuMu，Android 12，对着线上 1.7.30）
+### 验证情况（MuMu，Android 12，对着线上 FnReader 1.9.1）
 
-- ⑨ 点下去弹「导入书源」列表：「飞牛书库 新增」，确认导入成功
-- `dumpsys notification` 通知正文「已连接 FnReader 1.7.30　待命中」，服务 `isForeground=true foregroundId=108`
-- 服务端接口侧同一份书源：`/api/m/legado/search` → `/book`（自动入架）→ `/toc`（章节 url 指向 `/api/m/content`）闭环通过
+- 首启更新日志弹窗顶部即 `2026/11/08（1.5）`，可在包内 `assets/updateLog.md` 复核
+- 令牌换成新值后 ③ 跑通：「全部同步完成：新增 0 本　更新 3 条进度 / 飞牛书架共 10 本（已发送 3 本进度，封面随书回传）」
+- ⑧ 开着时通知栏为「已连接 FnReader 1.9.1　待命中」，`GET /api/bus` 可见本机 `version=1.5`、`online=true`
+- 封面链路服务端实测：`POST /api/m/books` 带 `coverData` → `{"ok":true,"added":0,"updated":1,"total":10}`，`GET /api/covers/<文件>` 返回 `200 image/png`
 
 ### 已知限制
 
-- 书源桥依赖飞牛在线；`/api/m/content` 对个别源服务端自身会卡住，本章会一直转圈
-- API19 机型系统较老，前台服务被某些 ROM 清理后仍需重进一次「FnReader 服务器」才会自动拉起（开机自启已在 manifest 里备好）
+- 尚未做文档 14.4 的持久化重试队列（加书即同步）
+- 飞牛 `/api/covers/` 生成的地址用它自己选的一块网卡 IP；手机不在同一网段时封面图可能打不开
+- 单包约 18.7 MB，未做混淆 / 资源压缩
+- 该包为 API19 移植版，低端机上首次加载书源列表比 Pro 慢属正常
+
+### 服务端侧提醒（与本包无关，但同一次排查里发现）
+
+- 旧版 `/api/config` 对非本机请求也下发 `apiToken`；1.7.31.1 已改成只对本机 / 已带令牌的请求下发。若还在更老的版本，请升级并重置令牌一次
+- 只监听 `:1122`、只暴露 `/api/m/*`；`/dav/` 与 `:1122` 都不要直接映射公网，外网请用组网或反代 + **HTTPS**
 
 ### 关于旧版本
 
-Release 列表只保留当前版本，`v1.4` 之前的版本在下次触发 prune 后会清理。
+Release 列表只保留当前版本，`v1.5` 之前的版本在下次触发 prune 后会清理。
