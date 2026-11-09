@@ -9,7 +9,7 @@
 
 - 底座：`LegadoTeam/legado` tag `3.23.110211`（commit `56c3301dc441c23aaa75bac973943f7469c202be`）
 - 应用名：**阅读**（包名仍为 `io.legado.app`，会和官方版冲突，安装前先卸载官方版）
-- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.0.2.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
+- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.0.3.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
 - 用途：老平板 / 老手机当纯阅读器
 
 ## 兼容性
@@ -19,8 +19,8 @@
 | minSdkVersion | 19（Android 4.4） |
 | targetSdkVersion | 30 |
 | compileSdkVersion | 34 |
-| versionCode | 20200（2.0.2） |
-| versionName | `2.0.2` |
+| versionCode | 20300（2.0.3） |
+| versionName | `2.0.3` |
 | 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
 | ABI | armeabi-v7a |
 | DEX | 5 个（`multiDexEnabled true` + `MultiDexApplication`） |
@@ -28,7 +28,7 @@
 已构建产物的校验结果：
 
 ```
-package: name='io.legado.api19' versionCode='20200' versionName='2.0.2'   # 见下文本版体积
+package: name='io.legado.api19' versionCode='20300' versionName='2.0.3'   # 见下文本版体积
 sdkVersion:'19'
 targetSdkVersion:'30'
 application-label:'阅读'
@@ -43,7 +43,8 @@ Verifies / v1: true / v2: true
 - **⑧⑨ 转后台**：缓存上传与书源双向同步连上服务端就每 5 分钟自动跑一轮，面板里不再有这两个按钮
 - **软总线两条队列**（2.0.2）：`bookinfo`（简介/封面补全）单并发独立跑，search/toc/content/rank 走检索队列 2 并发
 - **`bookinfo` 超时 9 秒**（2.0.2）：对齐服务端 `docs/APP同步接口.md` §18.2 的「超时 10 秒」
-- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.0.2 / 20200）
+- **目录分页**（2.0.3，仅跟进文档）：服务端 2.0.3/2.0.4 目录引擎分页上限 5→40、无 `nextTocUrl` 时按「下一页」兜底，客户端不改代码；实测同一本单书源从 50 章变成整本目录一次回完
+- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.0.3 / 20300）
 
 ## lean LEDE 更新日志与许愿（1.11 引入，仍在）
 
