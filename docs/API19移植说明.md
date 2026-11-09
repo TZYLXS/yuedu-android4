@@ -76,6 +76,13 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 1.10（versionCode 11000）：跟进服务端 1.11.3，无代码改动
+
+- `docs/更新日志.md` 新增 **1.11.3（2026-11-10）**：服务端补 `applyReplaceRules`（正文净化）、`formatJs` 结果生效、脚本/测试目录名统一、日志写入 `docs`、README 版本自动同步，全是服务端 legado-py 侧修复
+- `docs/APP同步接口.md` 本轮未变（27 458 B / SHA256 `7b46d6a625031f31…`），接口路径、回传字段、鉴权、软总线任务类型与超时都没动
+- 因此 4.0 版与 1.9 代码完全一致，只改版本号（1.10 / 11000）与文档；4.0 自有差异（`openWebShelf` 拼 `/app/legado-web`、`rawServer` 判 `/app/`、`negativeButton` 用 `getString(R.string.cancel)`、`serverBase` 的 path 分支）原样保留
+- 实测（MuMu + FnReader 1.11.3）：首启日志首条 `2026/11/10（1.10）`，面板九项齐全，测试连接回显 1.11.3
+
 ## 1.9（versionCode 10900）：软总线支持 rank 代抓榜单
 
 - 跟进 `docs/APP同步接口.md` §15 每日推荐（`GET /api/daily`）与 `docs/更新日志.md`（服务端 1.11.2）
