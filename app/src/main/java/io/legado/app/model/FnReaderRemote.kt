@@ -6,6 +6,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookSource
 import io.legado.app.model.webBook.WebBook
+import io.legado.app.utils.HtmlFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
@@ -106,10 +107,13 @@ object FnReaderRemote {
         id: String,
         ok: Boolean,
         data: JSONObject? = null,
-        error: String? = null
+        error: String? = null,
+        deviceId: String = ""
     ): Unit = withContext(Dispatchers.IO) {
         val payload = JSONObject().apply {
             put("id", id)
+            // 服务端要按设备统计「这活是哪台机器干的」，缺了就在 recent 里查无此人
+            if (deviceId.isNotEmpty()) put("deviceId", deviceId)
             put("ok", ok)
             if (data != null) put("data", data)
             if (!error.isNullOrBlank()) put("error", error)
@@ -128,6 +132,7 @@ object FnReaderRemote {
             "toc" -> toc(job.payload)
             "content" -> content(job.payload)
             "rank" -> rank(job.payload)
+            "bookinfo" -> bookInfo(job.payload)
             else -> throw RemoteException("不支持的任务类型：${job.type}")
         }
     }
@@ -232,6 +237,72 @@ object FnReaderRemote {
             put("paragraphs", paragraphs)
             put("title", chapter.title)
         }
+    }
+
+    // ---------------- 详情/简介补全（bookinfo，服务端 2.0.0 新增） ----------------
+
+    /*
+     * 服务端抓简介这条路是残的（起点详情页 202 反爬、晋江字体混淆），所以缺简介时把任务丢给手机：
+     * payload={bookUrl, source, name, author}。手机用本机书源的详情规则抓完回传，
+     * 字段全部可选，拿不到就省略——回空串服务端会当成「这书没简介」不再重试，所以宁缺勿滥。
+     */
+    private suspend fun bookInfo(payload: JSONObject): JSONObject {
+        val bookUrl = payload.optString("bookUrl")
+        if (bookUrl.isEmpty()) throw RemoteException("任务里没有书籍详情页地址")
+        val bs = matchSource(payload.optString("source"), bookUrl)
+        val book = Book(
+            bookUrl = bookUrl,
+            tocUrl = bookUrl,
+            origin = bs.bookSourceUrl,
+            originName = bs.bookSourceName
+        ).apply {
+            name = payload.optString("name")
+            author = payload.optString("author")
+        }
+        val info = WebBook.getBookInfoAwait(bs, book)
+        val intro = info.intro?.let { plainText(it) }
+        return JSONObject().apply {
+            if (!intro.isNullOrBlank()) put("intro", intro)
+            info.author?.takeIf { it.isNotBlank() }?.let { put("author", it) }
+            info.coverUrl?.takeIf { it.isNotBlank() }?.let { put("coverUrl", it) }
+            info.kind?.takeIf { it.isNotBlank() }?.let { put("kind", it) }
+            info.wordCount?.takeIf { it.isNotBlank() }?.let { put("wordCount", it) }
+            info.latestChapterTitle?.takeIf { it.isNotBlank() }?.let { put("lastChapter", it) }
+            if (info.totalChapterNum > 0) put("totalChapterNum", info.totalChapterNum)
+        }
+    }
+
+    /**
+     * bookinfo 的书源可能没给地址（服务端只存了书源 URL，有时是空的），
+     * 这时按 bookUrl 的 host 去本机书源里捞一个能用的。
+     */
+    private fun matchSource(sourceUrl: String, bookUrl: String): BookSource {
+        if (sourceUrl.isNotEmpty()) {
+            runCatching { source(sourceUrl) }.getOrNull()?.let { return it }
+        }
+        val host = runCatching { URL(bookUrl).host }.getOrNull()
+        if (!host.isNullOrEmpty()) {
+            appDb.bookSourceDao.all.firstOrNull { candidate ->
+                runCatching { URL(candidate.bookSourceUrl).host }.getOrNull() == host
+            }?.let { return it }
+        }
+        throw RemoteException("没有匹配的书源：${sourceUrl.ifEmpty { host.orEmpty() }}")
+    }
+
+    /** 富文本简介转纯文本：`<br>` 换成换行，标签全去，再压掉多余的空白行 */
+    private fun plainText(html: String): String {
+        var text = runCatching { HtmlFormatter.formatKeepImg(html, null) }.getOrElse { html }
+        text = text.replace(Regex("(?i)<br\\s*/?>"), "\n")
+            .replace(Regex("<[^>]+>"), "")
+            .replace("&nbsp;", " ")
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+        return text.lines()
+            .joinToString("\n") { it.trim() }
+            .replace(Regex("\n{3,}"), "\n\n")
+            .trim()
     }
 
     // ---------------- 榜单（rank） ----------------
@@ -345,6 +416,23 @@ object FnReaderRemote {
     // ---------------- 网络 ----------------
 
     /** @return HTTP 状态码 to 响应文本 */
+    /**
+     * 后台自动同步（书源 / 缓存）用的裸请求。返回 (状态码, 响应体)，
+     * 非 2xx 由调用方决定是「不支持」还是「失败」。
+     */
+    suspend fun fetch(
+        method: String,
+        url: String,
+        token: String,
+        jsonBody: String? = null,
+        readTimeoutMs: Int = 30000
+    ): Pair<Int, String> = withContext(Dispatchers.IO) {
+        request(method, url, token, jsonBody, readTimeoutMs)
+    }
+
+    /** 把 HTTP 状态码翻成人话，供自动同步的失败提示复用 */
+    fun explainCode(code: Int, body: String): String = explain(code, body)
+
     private fun request(
         method: String,
         url: String,

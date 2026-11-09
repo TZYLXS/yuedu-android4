@@ -20,6 +20,7 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.ThemeStore
 import io.legado.app.lib.theme.primaryColor
+import io.legado.app.model.FnReaderAutoSync
 import io.legado.app.model.FnReaderRemote
 import io.legado.app.service.FnReaderBridgeService
 import io.legado.app.ui.association.OnLineImportActivity
@@ -188,19 +189,6 @@ class FnReaderConfigDialog : BaseDialogFragment(R.layout.dialog_fnreader_config)
             "GET /api/bus：列出已报到的手机、在线状态、累计代理解析次数；"
                     + "要暂停某一台，在飞牛网页「设置 → 软总线」里点一下就行"
         ) { showBus() }
-        addMethod(
-            "⑧ 上传本机缓存到飞牛（网页离线读正文）",
-            "把已经缓存过的章节原文（book_cache 里的 .nb 文件）连同章节图片、封面原样推给飞牛"
-                    + "（POST /api/m/cache，文档 §16，layout:legado + chapters[].file/raw + origin），"
-                    + "NAS 自己转码成段落文本存进 cache/<书名>/，之后网页阅读直接读本地文件、不再回头访问书源；"
-                    + "即使 origin 补不上，缓存也能离线读正文；整本一次上传，超过 30 MB 的本子跳过"
-        ) { uploadCache() }
-        addMethod(
-            "⑨ 书源双向同步（最后一次修改为准）",
-            "按 lastUpdateTime 双向对齐（GET/POST /api/m/sources/sync，文档 §17）：本机改过的书源推到飞牛，"
-                    + "飞牛更进的拉回本地（pull / pullDeleted 覆盖本地），删除也同步；"
-                    + "首次按 bookSourceUrl 合并上传，之后只传本机改过的那几条"
-        ) { syncSourcesBoth() }
     }
 
     private fun bridgeOn(): Boolean = getPrefString(KEY_BRIDGE, "0") == "1"
@@ -410,69 +398,22 @@ class FnReaderConfigDialog : BaseDialogFragment(R.layout.dialog_fnreader_config)
         }
     }
 
+    /** 本地是否有这本书的 .nb 缓存（整本下过） */
+    private fun hasCache(book: Book): Boolean = runCatching {
+        val dir = File(BookHelp.cachePath, book.getFolderName())
+        dir.isDirectory && dir.listFiles()?.any { it.name.endsWith(".nb") } == true
+    }.getOrDefault(false)
+
     /**
-     * 把 /api/m/sync 的 shelf 与 progress 合并进本地书架：
-     * 书架上没有的书补进去；本地进度比服务器旧才覆盖（服务器时间更大的为准）。
+     * 把 /api/m/sync 的 shelf 与 progress 并进本地书架；
+     * 同名（不同书源）只留一本（优先有 .nb 缓存的）、用户删过的书不再补回 ——
+     * 具体逻辑统一在 FnReaderAutoSync，面板和后台自动同步共用同一套。
      */
     private fun mergeShelfAndProgress(body: String): String? {
-        val obj = runCatching { JSONObject(body) }.getOrNull() ?: return null
-        val shelf = obj.optJSONArray("shelf") ?: JSONArray()
-        val progress = obj.optJSONArray("progress") ?: JSONArray()
-
-        val remoteProgress = HashMap<String, JSONObject>()
-        for (i in 0 until progress.length()) {
-            val p = progress.optJSONObject(i) ?: continue
-            val url = p.optString("bookUrl")
-            if (url.isNotEmpty()) remoteProgress[url] = p
-        }
-
-        var added = 0
-        var updated = 0
-        for (i in 0 until shelf.length()) {
-            val s = shelf.optJSONObject(i) ?: continue
-            val url = s.optString("bookUrl")
-            if (url.isEmpty()) continue
-            val shelfTime = s.optLong("durChapterTime", 0L)
-            val local = appDb.bookDao.getBook(url)
-            if (local == null) {
-                val book = Book(
-                    bookUrl = url,
-                    origin = s.optString("origin"),
-                    originName = s.optString("originName")
-                )
-                book.name = s.optString("name")
-                book.author = s.optString("author")
-                book.kind = s.optString("kind").ifEmpty { null }
-                book.coverUrl = s.optString("coverUrl").ifEmpty { null }
-                book.intro = s.optString("intro").ifEmpty { null }
-                book.latestChapterTitle = s.optString("lastChapter").ifEmpty { null }
-                book.totalChapterNum = s.optInt("totalChapterNum", 0)
-                book.latestChapterTime = if (shelfTime > 0) shelfTime else System.currentTimeMillis()
-                book.durChapterTitle = s.optString("durChapterTitle").ifEmpty { null }
-                book.durChapterIndex = s.optInt("durChapterIndex", 0)
-                book.durChapterPos = s.optInt("durChapterPos", 0)
-                book.durChapterTime = if (shelfTime > 0) shelfTime else 0L
-                book.save()
-                added++
-                continue
-            }
-            val p = remoteProgress[url]
-            val remoteTime = maxOf(shelfTime, p?.optLong("time", 0L) ?: 0L)
-            if (remoteTime > local.durChapterTime) {
-                local.durChapterIndex =
-                    p?.optInt("index", local.durChapterIndex) ?: s.optInt("durChapterIndex", local.durChapterIndex)
-                local.durChapterPos =
-                    p?.optInt("pos", local.durChapterPos) ?: s.optInt("durChapterPos", local.durChapterPos)
-                val title = p?.optString("title").orEmpty().ifEmpty { s.optString("durChapterTitle") }
-                if (title.isNotEmpty()) local.durChapterTitle = title
-                local.durChapterTime = remoteTime
-                local.save()
-                updated++
-            }
-        }
-        // 只在 progress 里出现、书架上没有的书（例如服务器已删书）：不新建，跳过
-
-        return "新增 $added 本　更新 $updated 条进度（本地书架 ${appDb.bookDao.all.size} 本）"
+        val r = FnReaderAutoSync.mergeShelf(body) ?: return null
+        val localCount = appDb.bookDao.all.size
+        return if (r.isEmpty()) "书架无变化（本地书架 $localCount 本）"
+        else "$r（本地书架 $localCount 本）"
     }
 
     /**
@@ -621,6 +562,9 @@ class FnReaderConfigDialog : BaseDialogFragment(R.layout.dialog_fnreader_config)
                 }
                 val key = normName(book.name)
                 if (picked.containsKey(key)) {
+                    // 同名只推一本：本地有 .nb 缓存（整本下过）的那本优先，其余跳过
+                    val cur = picked[key]
+                    if (cur != null && !hasCache(cur) && hasCache(book)) picked[key] = book
                     localDup++
                     continue
                 }

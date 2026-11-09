@@ -9,7 +9,7 @@
 
 - 底座：`LegadoTeam/legado` tag `3.23.110211`（commit `56c3301dc441c23aaa75bac973943f7469c202be`）
 - 应用名：**阅读**（包名仍为 `io.legado.app`，会和官方版冲突，安装前先卸载官方版）
-- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_1.10.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
+- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.0.2.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
 - 用途：老平板 / 老手机当纯阅读器
 
 ## 兼容性
@@ -19,8 +19,8 @@
 | minSdkVersion | 19（Android 4.4） |
 | targetSdkVersion | 30 |
 | compileSdkVersion | 34 |
-| versionCode | 11000（1.10） |
-| versionName | `1.10` |
+| versionCode | 20200（2.0.2） |
+| versionName | `2.0.2` |
 | 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
 | ABI | armeabi-v7a |
 | DEX | 5 个（`multiDexEnabled true` + `MultiDexApplication`） |
@@ -28,7 +28,7 @@
 已构建产物的校验结果：
 
 ```
-package: name='io.legado.api19' versionCode='11000' versionName='1.10'   # 18.67 MB
+package: name='io.legado.api19' versionCode='20200' versionName='2.0.2'   # 见下文本版体积
 sdkVersion:'19'
 targetSdkVersion:'30'
 application-label:'阅读'
@@ -36,9 +36,31 @@ native-code: 'armeabi-v7a'
 Verifies / v1: true / v2: true
 ```
 
-## 接入 FnReader（我的 → FnReader 服务器，①–⑨）
+## 2.0 主线：书架去重、删除墓碑、软总线两条队列
 
-服务端 FnReader 1.11.0 起，面板里九项功能与阅读Pro 1.10 完全一致：
+- **书架同名去重**：同名（不同书源）只留一本，优先保留本地已有 `.nb` 缓存的那本，别的副本进度先并过去再删
+- **删除墓碑**：手动删掉的书不会被自动同步补回来，服务端再推同一本直接跳过
+- **⑧⑨ 转后台**：缓存上传与书源双向同步连上服务端就每 5 分钟自动跑一轮，面板里不再有这两个按钮
+- **软总线两条队列**（2.0.2）：`bookinfo`（简介/封面补全）单并发独立跑，search/toc/content/rank 走检索队列 2 并发
+- **`bookinfo` 超时 9 秒**（2.0.2）：对齐服务端 `docs/APP同步接口.md` §18.2 的「超时 10 秒」
+- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.0.2 / 20200）
+
+## lean LEDE 更新日志与许愿（1.11 引入，仍在）
+
+`coolsnowwolf/lede` 没有独立 CHANGELOG，它的「更新日志」就是 master 的提交历史，本版把这条源内置成订阅：
+
+- 订阅 `https://github.com/coolsnowwolf/lede/commits/master.atom`（分组「固件」），
+  「订阅」里直接看最近提交；「我的 → lean LEDE 更新日志」是快捷入口
+- 内置 RSS 解析器补 Atom 支持（`<entry>` / `<link href>` / `<summary>` / `<updated>` ISO 时间），
+  否则这种源解析出 0 条
+- 「我的 → 给 lean 许愿（GitHub）」：输入框 + 提交，登录后一键 fork lede、建分支、写
+  `wishlist/<时间>-<账号>.md` 并向上游开 PR；也可「改发 Issue」
+- token 只存本机 SharedPreferences，不进备份；classic token 勾 `public_repo`，
+  细粒度 token 需 `Contents` + `Pull requests` 读写，自动 fork 还要 `Repository creation`
+
+## 接入 FnReader（我的 → FnReader 服务器，①–⑤）
+
+服务端 FnReader 2.0.x 起，面板五项与阅读Pro 一致；缓存上传、书源同步已改自动，不再占按钮：
 
 | 项 | 干什么 | 接口 |
 | --- | --- | --- |
@@ -47,12 +69,22 @@ Verifies / v1: true / v2: true
 | ③ | 打开飞牛阅读网页 | 内置浏览器（4.0 版地址拼 `/app/legado-web`） |
 | ④ | 接入手册 | 内置三份文档 |
 | ⑤ | 手机解析待命 | `/api/m/remote/pending` + `/api/m/remote/result` |
-| ⑥ | 接入书源桥 | 服务端生成的「飞牛书库」源 |
-| ⑦ | 查看软总线 | `GET /api/bus` |
-| ⑧ | 上传本机缓存到飞牛（网页离线读正文，§16） | `POST /api/m/cache`，传 `.nb` 原文，服务端转码落 `cache/<书名>/` |
-| ⑨ | 书源双向同步（最后一次修改为准，§17） | 首次 `POST /api/m/sources` 合并；之后 `POST/GET /api/m/sources/sync` 增量 |
 
-⑧ 单次请求上限 30 MB；⑨ 首次不推「全量 + since=0」（服务端会当整库快照删源，见 `docs/app回传接受规范.md` §9）。
+后台自动动作（连上即开启，每 5 分钟一轮）：
+
+- **缓存上传**：`POST /api/m/cache`，传 `.nb` 原文，服务端转码落 `cache/<书名>/`；单次上限 30 MB
+- **书源双向同步**：首次 `POST /api/m/sources` 合并，之后按 `lastUpdateTime` 增量；不推「全量 + since=0」
+  （服务端会当整库快照删源，见 `docs/app回传接受规范.md` §9）
+
+软总线任务类型与超时（手机侧执行）：
+
+| 类型 | 干什么 | 超时 |
+| --- | --- | --- |
+| `search` | 本机书源搜索，限流时用本机书架同源同名兜底 | 18 s |
+| `toc` | 本机书源抓目录 | 18 s |
+| `content` | 本机书源抓正文 | 23 s |
+| `rank` | 本机书源抓榜单 | 23 s |
+| `bookinfo` | 详情规则补简介/封面/作者/分类/字数/最新章节/章数 | 9 s（服务端等 10 s） |
 
 ## 与上游的差异
 

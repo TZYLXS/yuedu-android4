@@ -76,6 +76,34 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.0.x（versionCode 20200 / 2.0.2）：书架去重、删除墓碑、软总线拆两条队列
+
+与阅读Pro 2.0.2 同构，4.0 版自有差异原样保留（`openWebShelf` 拼 `/app/legado-web`、`rawServer` 判 `/app/`、
+`negativeButton(requireContext().getString(R.string.cancel))`、`serverBase` 的 path 分支）。
+
+- **2.0.0 – 2.0.1**：书架同名去重（优先留本地有 `.nb` 的那本）、删除墓碑（本地删掉的书不被服务端推回）、
+  ⑧⑨ 缓存上传与书源同步转后台自动（每 5 分钟一轮）、启动页换「飞牛阅读」竖版毛笔字
+- **2.0.2**：跟进 `docs/APP同步接口.md` §18「简介补全」（`bookinfo`）——`bookinfo` 走独立 `infoQueue` 单并发，
+  `search` / `toc` / `content` / `rank` 走 `searchQueue` 2 并发；`bookinfo` 超时 23 s → **9 s**
+  （对齐 §18.2「超时 10 秒」）；`FnReaderRemote.bookInfo()` 回传字段与 §18.1 逐项一致
+- 实测（MuMu Android 12）：首启日志首条 `2026/11/10（2.0.2）`，面板 ①–⑤ 齐全、无 ⑧⑨ 残留
+
+## 1.11（versionCode 20200）：lean LEDE 更新日志订阅 + 给 lean 许愿（GitHub）
+
+与阅读Pro 1.11 同构的两项新能力（4.0 版自有差异原样保留：`openWebShelf` 拼 `/app/legado-web`、
+`rawServer` 判 `/app/`、`negativeButton` 用 `getString(R.string.cancel)`、`serverBase` 的 path 分支）：
+
+- **订阅**：`coolsnowwolf/lede` 没有 CHANGELOG，更新日志就是 master 提交历史；
+  内置 `https://github.com/coolsnowwolf/lede/commits/master.atom`（分组「固件」、`customOrder=6`），
+  `DefaultData.ensureBuiltinRssSources()` 只补缺失、不动用户增删
+- **Atom 解析**：`RssParserDefault.kt` 补 `<entry>` 条目态、`<link href>`（`rel="alternate"`）、
+  `<summary>`/`<content>`、`<updated>`/`<published>` 的 ISO 8601 → 本地 `yyyy-MM-dd HH:mm`、标题 `oneLine()`
+- **许愿**：`model/GithubWish.kt` 四步（`/user` → fork（缺则建并轮询）→ 建分支写
+  `wishlist/<时间>-<账号>.md` → `/pulls`），兜底 `/issues`；
+  UI 是 `ui/config/GithubWishDialog.kt` + `dialog_github_wish.xml`，入口在「我的」页
+- token 只存本机，不进备份；classic 勾 `public_repo`，细粒度需 `Contents` + `Pull requests` 读写，
+  自动 fork 还要 `Repository creation`
+
 ## 1.10（versionCode 11000）：跟进服务端 1.11.3，无代码改动
 
 - `docs/更新日志.md` 新增 **1.11.3（2026-11-10）**：服务端补 `applyReplaceRules`（正文净化）、`formatJs` 结果生效、脚本/测试目录名统一、日志写入 `docs`、README 版本自动同步，全是服务端 legado-py 侧修复
