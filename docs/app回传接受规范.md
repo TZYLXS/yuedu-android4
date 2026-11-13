@@ -1,7 +1,7 @@
 # APP 回传接受规范
 
 > 服务端依据：FnReader `1.11.3`（`docs/APP同步接口.md` 第 4 / 9 / 11 / 13 / 14 / 15 / 16 / 17 章）
-> 客户端：阅读Pro `1.10`（`io.legado.pro`）、安卓4.0 版 `1.10`（`io.legado.api19`）
+> 客户端：阅读Pro `1.11`（`io.legado.pro`）、安卓4.0 版 `1.11`（`io.legado.api19`）
 > 本文写的是**服务端接收侧**的规矩：APP 往飞牛回传什么、字段怎么填、什么会被拒、什么会被合并。
 
 ## 0 通用约定
@@ -279,7 +279,7 @@ POST /api/m/sources/sync                   X-Api-Token: …
 
 ## 12 1.11.3（2026-11-10）：服务端内部修复，接口无变化
 
-服务端 1.11.3 只改 legado-py：补 `applyReplaceRules`（正文净化）、`formatJs` 结果生效、脚本/测试目录名统一、日志写入 `docs`、README 版本自动同步。`docs/APP同步接口.md` 本轮未变（27 458 B / SHA256 `7b46d6a6…`），第 4 / 9 / 11 / 13 / 14 / 15 / 16 / 17 章的字段表与自测清单继续有效，客户端 1.10 无代码改动。
+服务端 1.11.3 只改 legado-py：补 `applyReplaceRules`（正文净化）、`formatJs` 结果生效、脚本/测试目录名统一、日志写入 `docs`、README 版本自动同步。`docs/APP同步接口.md` 本轮未变（27 458 B / SHA256 `7b46d6a6…`），第 4 / 9 / 11 / 13 / 14 / 15 / 16 / 17 章的字段表与自测清单继续有效，客户端 1.11 未改 FnReader 对接代码（新增能力是 lean 订阅与 GitHub 许愿，与回传协议无关）。
 
 实测补记：`POST /api/remote/job {"type":"rank"}` → `400 {"error":"不支持的任务类型"}`；`rank` 只能由服务端 `/api/daily` 内部 `remoteRank` 下发，外部不能直接下单。
 

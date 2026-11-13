@@ -76,6 +76,19 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.0.4（versionCode 20004）：仅跟进文档，无代码改动
+
+服务端 `docs/更新日志.md` 再新增 2.0.5 / 2.0.6 两段（都在讲「加入书架后自动抓完整目录」），
+`docs/APP同步接口.md` 无变化（`68e3f7954681`，29343 B）。
+
+- **2.0.5**：加入书架后立即抓完整目录（强制 `refresh`、含分页），服务端后台补全并广播，按钮显示章数
+- **2.0.6**：加入书架立即抓完整目录，有手机在线优先走软总线（能过反爬），无设备或失败自动回落本机解析；
+  按钮与提示显示章数和来源
+
+与阅读Pro 2.0.4 同构，4.0 版自有差异原样保留（`openWebShelf` 拼 `/app/legado-web`、`rawServer` 判 `/app/`、
+`negativeButton(requireContext().getString(R.string.cancel))`、`serverBase` 的 path 分支）。
+`toc` 任务同样是整本抓完才回（18 s），没有缓存，等同于服务端要求的 `refresh`，本版代码一行没改。
+
 ## 2.0.3（versionCode 20300）：仅跟进文档，无代码改动
 
 服务端 `docs/更新日志.md` 新增 2.0.3 / 2.0.4（目录引擎分页上限 5 → 40 页、带循环检测、
