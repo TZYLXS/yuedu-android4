@@ -2,7 +2,7 @@
 
 Legado（阅读）`3.23.110211` 编译，**minSdk 19 / targetSdk 30**（Android 4.4+），`armeabi-v7a` 单 ABI。
 应用名「阅读」，包名 `io.legado.api19`，与官方版、阅读Pro 可共存安装。
-与 **阅读Pro（`io.legado.pro`）2.4.2** 同步发布、同一套版本号，并与服务端 `legado-web` **v2.4.2** 对齐。
+与 **阅读Pro（`io.legado.pro`）2.4.3** 同步发布、同一套版本号，并与服务端 `legado-web` **v2.4.3** 对齐。
 
 ### 本版新增
 
