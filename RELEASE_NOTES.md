@@ -1,4 +1,4 @@
-## 安卓 4.0 版 2.4.2（versionCode 20402）
+## 安卓 4.0 版 2.4.3（versionCode 20403）
 
 Legado（阅读）`3.23.110211` 编译，**minSdk 19 / targetSdk 30**（Android 4.4+），`armeabi-v7a` 单 ABI。
 应用名「阅读」，包名 `io.legado.api19`，与官方版、阅读Pro 可共存安装。
@@ -25,9 +25,9 @@ Legado（阅读）`3.23.110211` 编译，**minSdk 19 / targetSdk 30**（Android 
 
 | 文件 | 体积 | SHA256 |
 | --- | --- | --- |
-| `yuedu_app_2.4.2.apk` | 19 928 139 B（19.00 MB） | `86a5fe66dc90c4c0ed99df0af33558d37ff6566f2db2e4e2e20d3b8a03bbaece` |
+| `yuedu_app_2.4.3.apk` | 19 928 131 B（19.00 MB） | `c52971239074e098402c2e6469020a004cb9c04263f44845e125258443558fb7` |
 
-`aapt2 dump badging`：`io.legado.api19`、`versionCode 20402`、`versionName 2.4.2`、`sdkVersion 19`、
+`aapt2 dump badging`：`io.legado.api19`、`versionCode 20403`、`versionName 2.4.3`、`sdkVersion 19`、
 `targetSdkVersion 30`、`native-code 'armeabi-v7a'`、`application-debuggable` 不存在（发版包无 debug 能力）。
 
 ### 安装
