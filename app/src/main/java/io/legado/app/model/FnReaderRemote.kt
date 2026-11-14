@@ -5,6 +5,7 @@ import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookSource
+import io.legado.app.data.entities.SearchBook
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.utils.HtmlFormatter
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +13,7 @@ import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -124,6 +126,119 @@ object FnReaderRemote {
     }
 
     /**
+     * 下载电子书原文件到本地缓存。支持断点续传：已有部分文件就带 Range 接着下。
+     * fileUrl 可能是相对路径（/api/m/ebook/file/xxx）。
+     */
+    suspend fun downloadToFile(
+        base: String,
+        token: String,
+        fileUrl: String,
+        dest: File,
+        expectedSize: Long = 0
+    ): File = withContext(Dispatchers.IO) {
+        val url = if (fileUrl.startsWith("http://", true) || fileUrl.startsWith("https://", true)) {
+            fileUrl
+        } else {
+            base.trimEnd('/') + "/" + fileUrl.trimStart('/')
+        }
+        if (expectedSize > 0 && dest.exists() && dest.length() == expectedSize) return@withContext dest
+        dest.parentFile?.mkdirs()
+        var conn: HttpURLConnection? = null
+        try {
+            conn = URL(url).openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 10000
+            conn.readTimeout = 90000
+            conn.setRequestProperty("X-Api-Token", token)
+            val start = if (dest.exists()) dest.length() else 0L
+            if (start > 0) conn.setRequestProperty("Range", "bytes=$start-")
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                val body = conn.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                throw RemoteException(explain(code, body))
+            }
+            val append = start > 0 && code == 206
+            conn.inputStream.use { input ->
+                java.io.FileOutputStream(dest, append).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            if (expectedSize > 0 && dest.length() != expectedSize) {
+                throw RemoteException("文件下载不完整：${dest.length()} / $expectedSize")
+            }
+            dest
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    /** 上传一个电子书 JSON 分片（明文 JSON，服务端限制 8MB/片） */
+    suspend fun uploadEbookPart(
+        base: String,
+        token: String,
+        sha1: String,
+        seq: Int,
+        total: Int,
+        json: String
+    ): JSONObject = withContext(Dispatchers.IO) {
+        val url = "$base/api/m/ebook/part?sha1=$sha1&seq=$seq&total=$total"
+        var conn: HttpURLConnection? = null
+        try {
+            conn = URL(url).openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.connectTimeout = 10000
+            conn.readTimeout = 60000
+            conn.doOutput = true
+            conn.setRequestProperty("X-Api-Token", token)
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            val bytes = json.toByteArray(Charsets.UTF_8)
+            conn.setFixedLengthStreamingMode(bytes.size)
+            conn.outputStream.use { it.write(bytes) }
+            val code = conn.responseCode
+            val body = (if (code in 200..299) conn.inputStream else conn.errorStream)
+                ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+            if (code !in 200..299) throw RemoteException(explain(code, body))
+            runCatching { JSONObject(body) }.getOrDefault(JSONObject())
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    /**
+     * 单章按需回传（toc-only 模式的补章接口）
+     * `POST /api/m/ebook/chapter?sha1=&index=`，请求体见 FnReaderEbook.buildChapter。
+     */
+    suspend fun uploadEbookChapter(
+        base: String,
+        token: String,
+        sha1: String,
+        index: Int,
+        json: String
+    ): JSONObject = withContext(Dispatchers.IO) {
+        val url = "$base/api/m/ebook/chapter?sha1=$sha1&index=$index"
+        var conn: HttpURLConnection? = null
+        try {
+            conn = URL(url).openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.connectTimeout = 10000
+            conn.readTimeout = 30000
+            conn.doOutput = true
+            conn.setRequestProperty("X-Api-Token", token)
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            val bytes = json.toByteArray(Charsets.UTF_8)
+            conn.setFixedLengthStreamingMode(bytes.size)
+            conn.outputStream.use { it.write(bytes) }
+            val code = conn.responseCode
+            val body = (if (code in 200..299) conn.inputStream else conn.errorStream)
+                ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+            if (code !in 200..299) throw RemoteException(explain(code, body))
+            runCatching { JSONObject(body) }.getOrDefault(JSONObject())
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    /**
      * 执行一个任务，返回要回传给服务端的 data。
      */
     suspend fun execute(job: Job): JSONObject = withContext(Dispatchers.IO) {
@@ -160,7 +275,13 @@ object FnReaderRemote {
         val bs = source(payload.optString("source"))
         val key = payload.optString("key")
         if (key.isEmpty()) throw RemoteException("任务里没有搜索关键词")
-        val list = WebBook.searchBookAwait(bs, key, 1)
+        val kw = key.trim()
+        var list = runCatching { WebBook.searchBookAwait(bs, key, 1) }.getOrDefault(emptyList())
+        if (list.isEmpty()) {
+            // 顶点小说这类站按 IP 限流「搜索间隔15秒」，服务端批量派发时常常抓到空结果页；
+            // 站点不给结果时先用本机书架里同源、同名的书兜底，服务端就能把这本书搜出来
+            list = localShelfMatch(bs, kw)
+        }
         val books = JSONArray()
         list.forEach { b ->
             books.put(JSONObject().apply {
@@ -176,6 +297,35 @@ object FnReaderRemote {
             })
         }
         return JSONObject().put("books", books)
+    }
+
+    /**
+     * 站点搜索被限流 / 关键词命中不到时，拿本机书架里同一书源的书兑底：
+     * 书名包含关键词即可，字段齐全，服务端能直接建书并取目录。
+     */
+    private fun localShelfMatch(bs: BookSource, key: String): List<SearchBook> {
+        val normKey = key.replace(" ", "").lowercase()
+        if (normKey.isEmpty()) return emptyList()
+        return appDb.bookDao.all
+            .filter { book ->
+                book.name.isNotBlank() &&
+                    book.origin == bs.bookSourceUrl &&
+                    book.name.replace(" ", "").lowercase().contains(normKey)
+            }
+            .take(10)
+            .map { book ->
+                SearchBook(
+                    bookUrl = book.bookUrl,
+                    origin = book.origin,
+                    originName = book.originName,
+                    name = book.name,
+                    author = book.author,
+                    kind = book.kind,
+                    coverUrl = book.coverUrl,
+                    intro = book.intro,
+                    latestChapterTitle = book.latestChapterTitle
+                )
+            }
     }
 
     private suspend fun toc(payload: JSONObject): JSONObject {
@@ -470,6 +620,9 @@ object FnReaderRemote {
                 "令牌不对或已被重置（FnReader 设置 → 手机接入 → 重置后，App 里要重新填）"
             code == 403 -> "令牌没有访问这个接口的权限（HTTP 403）"
             code == 404 -> "接口不存在：地址里可能带了多余的路径（HTTP 404）"
+            // 2.1.0 起：安装/升级后没在网页确认缓存位置，领任务会一直被 409 挡住
+            code == 409 && (lower.contains("needconfirm") || lower.contains("缓存") || lower.contains("setup")) ->
+                "飞牛还没确认缓存保存位置：去网页端「设置 → 缓存目录」点一次确认，App 不用改配置"
             plain.isEmpty() -> "服务端没有返回内容（HTTP $code）"
             plain.startsWith("<") -> "地址返回的是网页，不是手机接口"
             code >= 500 -> "服务端出错（HTTP $code）${plain.take(60)}"

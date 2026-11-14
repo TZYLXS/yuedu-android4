@@ -76,6 +76,20 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.0.5（versionCode 20005）：仅跟进文档，无代码改动
+
+服务端 `docs/更新日志.md` 再新增 2.0.7 / 2.0.8 / 2.0.9 三段（都讲缓存目录去重），
+`docs/APP同步接口.md` 无变化（`68e3f7954681`，29343 B）。
+
+- **2.0.7**：`<下载目录>/cache` 下同一本书不再生成「书名 (2)(3)…」，重复同步复用原目录；启动时自动合并历史重复目录，新增 `/api/cache/dedupe`
+- **2.0.8**：去重改为异步、只由 `/api/cache/dedupe` 触发，避免扫描大量目录卡住服务；重复同步复用原目录
+- **2.0.9**：按「书名+作者」归并跨书源同名目录，合并改用 rename（同盘瞬时）；NAS 上 1641 个重复目录已清到 158 个
+
+这三段全在服务端缓存落盘与目录去重，`/api/cache/dedupe` 由服务端自己调用，客户端不参与；
+`shelf` / `search` / `toc` / `content` / `progress` / `sources/sync` / `cover` 与封面、书源上传的路径、
+字段、鉴权、超时都没变，与阅读Pro 2.0.5 同构，4.0 版自有差异原样保留（`openWebShelf` 拼 `/app/legado-web`、`rawServer` 判 `/app/`、
+`negativeButton(requireContext().getString(R.string.cancel))`、`serverBase` 的 path 分支），本版代码一行没改。
+
 ## 2.0.4（versionCode 20004）：仅跟进文档，无代码改动
 
 服务端 `docs/更新日志.md` 再新增 2.0.5 / 2.0.6 两段（都在讲「加入书架后自动抓完整目录」），
@@ -89,7 +103,7 @@ lint -appRelease:
 `negativeButton(requireContext().getString(R.string.cancel))`、`serverBase` 的 path 分支）。
 `toc` 任务同样是整本抓完才回（18 s），没有缓存，等同于服务端要求的 `refresh`，本版代码一行没改。
 
-## 2.0.3（versionCode 20300）：仅跟进文档，无代码改动
+## 2.0.3（versionCode 20003）：仅跟进文档，无代码改动
 
 服务端 `docs/更新日志.md` 新增 2.0.3 / 2.0.4（目录引擎分页上限 5 → 40 页、带循环检测、
 没写 `nextTocUrl` 时按「下一页」兜底；Python 引擎目录同样分页），`docs/APP同步接口.md` 无变化。
