@@ -76,6 +76,15 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.6.18.2（versionCode 2061802）：仅跟进文档，无代码改动
+
+上游 `ecf0408..c3922a3` 只有两份文档提交（`6bfdbdc6`、`c3922a35`），修改 `AGENTS.md` 与 `docs/软总线调试APK.md`：
+
+- `AGENTS.md` 新增上游环境专用的工具调用约定，不影响本客户端代码或接口。
+- `docs/软总线调试APK.md` 新增 §6.3，明确 `GET /api/bus` 的设备字段 `id`、`name`、`model`、`version`、`lastSeen`、`handled`、`enabled`、`debug`、`online`、`idle`，以及顶层 `pending`、`recent`、`usage`；这些是面板⑦的只读信息，现有调用无需调整。
+- 三份重点文档的 blob SHA 与 2.6.18 基线一致；`/api/m/*` 路径、字段、鉴权、任务类型、超时全部未变，A4 的 2 条检索线程与 E-ink 优化保持原样。
+- 文档口径同步校正：`cover` / `intro` 没有独立 `timeoutOf` 分支，当前实际落 default **20 秒**；`bookinfo` 仍为 9 秒。本版只修正文档，不改代码。
+
 ## 2.6.18.1（versionCode 2061801）：跟进加权路由，新增 cover/intro 与幂等识别
 
 服务端 2.6.17 / 2.6.18（`b639ec2..ecf040`）把软总线升级为加权路由，本版有真实代码改动；同时新增 E-ink 墨水屏优化。

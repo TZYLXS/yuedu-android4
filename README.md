@@ -9,7 +9,7 @@
 
 - 底座：`LegadoTeam/legado` tag `3.23.110211`（commit `56c3301dc441c23aaa75bac973943f7469c202be`）
 - 应用名：**阅读**（包名仍为 `io.legado.app`，会和官方版冲突，安装前先卸载官方版）
-- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.6.18.1.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
+- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.6.18.2.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
 - 用途：老平板 / 老手机当纯阅读器
 
 ## 兼容性
@@ -19,8 +19,8 @@
 | minSdkVersion | 19（Android 4.4） |
 | targetSdkVersion | 30 |
 | compileSdkVersion | 34 |
-| versionCode | 2061801（2.6.18.1） |
-| versionName | `2.6.18.1` |
+| versionCode | 2061802（2.6.18.2） |
+| versionName | `2.6.18.2` |
 | 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
 | ABI | armeabi-v7a |
 | DEX | 5 个（`multiDexEnabled true` + `MultiDexApplication`） |
@@ -28,7 +28,7 @@
 已构建产物的校验结果：
 
 ```
-package: name='io.legado.api19' versionCode='2061801' versionName='2.6.18.1'   # 见下文本版体积
+package: name='io.legado.api19' versionCode='2061802' versionName='2.6.18.2'   # 见下文本版体积
 sdkVersion:'19'
 targetSdkVersion:'30'
 application-label:'阅读'
@@ -57,7 +57,8 @@ Verifies / v1: true / v2: true
 - **加权路由与封面/简介拆分**（2.6.17 / 2.6.18）：任务分 `book`/`content`/`media` 三类，服务端按隐藏性能分路由、领取锁定 30 秒、在途上限高分 3/低分 2、结果幂等（`duplicate`/`stale`）；2.6.18 修在途泄漏。本端已支持拆分任务 `cover`/`intro`，`submit()` 识别 duplicate/stale 不重试
 - **E-ink 墨水屏优化**（2.6.18.1，面向文石/墨案/海信/汉王等常见安卓墨水屏，无厂商 SDK 依赖）：「我的 → 主题模式」选「E-Ink 模式」后，
   关闭 Activity/对话框转场、列表项动画、水波纹、滚动条淡变与边缘回弹，白底黑字，减少残影与全屏刷新；新增 `utils/EInkUtils.kt` 与 `AppTheme.EInk` 主题
-- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.6.18.1 / 2061801）
+- **软总线设备字段说明**（2.6.18.2，仅跟进文档）：上游补充 `/api/bus` 设备字段与调试快照，客户端契约零变化、代码未改
+- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.6.18.2 / 2061802）
 
 ## lean LEDE 更新日志与许愿（1.11 引入，仍在）
 
@@ -102,8 +103,8 @@ Verifies / v1: true / v2: true
 | `content` | 本机书源抓正文 | 23 s |
 | `rank` | 本机书源抓榜单 | 23 s |
 | `bookinfo` | 详情规则补简介/封面/作者/分类/字数/最新章节/章数 | 9 s（服务端等 10 s） |
-| `cover` | 2.6.17 拆分任务，只回 `coverUrl`；不支持时服务端回退 bookinfo | 9 s |
-| `intro` | 2.6.17 拆分任务，只回简介与元数据 | 9 s |
+| `cover` | 2.6.17 拆分任务，只回 `coverUrl`；不支持时服务端回退 bookinfo | 20 s（当前 default；服务端等 8 s） |
+| `intro` | 2.6.17 拆分任务，只回简介与元数据 | 20 s（当前 default；服务端等 8 s） |
 
 ## 与上游的差异
 
