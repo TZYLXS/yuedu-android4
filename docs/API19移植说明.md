@@ -76,6 +76,16 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.6.11.1（versionCode 2061101）：仅跟进文档，无代码改动
+
+服务端 2.6.11 只改应用信息里的开发者 / 维护者 / 发布者，`docs/fnos-fpk-build.md` 的 `maintainer` / `maintainer_url` / `distributor`
+示例换成 `TZYLXS`；新增 `docs/软总线调试APK.md` 属调试工具说明。`docs/APP同步接口.md`、`docs/更新日志.md` 零改动，
+`server.js` 未动。A4 端与 Pro 同构，代码与 2.6.10.1 逐字一致，仅包名、启动页与 A4 专属分支保持原样。
+
+- **2.6.11（本次跟进）**：开发者 / 维护者 / 发布者统一为 `TZYLXS`，`maintainer_url` 指向 `https://github.com/TZYLXS`
+- 契约复核：任务类型 `search` / `toc` / `content` / `rank` / `bookinfo`、超时 18 / 18 / 23 / 23 / 9 秒、
+  `X-Api-Token` 与传书 `X-Upload-Token`（现取）全部未变
+
 ## 2.6.10.1（versionCode 2061001）：仅跟进文档，无代码改动
 
 服务端 2.6.9 / 2.6.10 只改网页设置页的地址展示：IPv4 与 IPv6 分行、IPv6 独立一行并可单独复制；
