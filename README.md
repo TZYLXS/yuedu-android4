@@ -9,7 +9,7 @@
 
 - 底座：`LegadoTeam/legado` tag `3.23.110211`（commit `56c3301dc441c23aaa75bac973943f7469c202be`）
 - 应用名：**阅读**（包名仍为 `io.legado.app`，会和官方版冲突，安装前先卸载官方版）
-- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.6.8.1.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
+- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.6.10.1.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
 - 用途：老平板 / 老手机当纯阅读器
 
 ## 兼容性
@@ -19,8 +19,8 @@
 | minSdkVersion | 19（Android 4.4） |
 | targetSdkVersion | 30 |
 | compileSdkVersion | 34 |
-| versionCode | 2060801（2.6.8.1） |
-| versionName | `2.6.8.1` |
+| versionCode | 2061001（2.6.10.1） |
+| versionName | `2.6.10.1` |
 | 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
 | ABI | armeabi-v7a |
 | DEX | 5 个（`multiDexEnabled true` + `MultiDexApplication`） |
@@ -28,7 +28,7 @@
 已构建产物的校验结果：
 
 ```
-package: name='io.legado.api19' versionCode='2060801' versionName='2.6.8.1'   # 见下文本版体积
+package: name='io.legado.api19' versionCode='2061001' versionName='2.6.10.1'   # 见下文本版体积
 sdkVersion:'19'
 targetSdkVersion:'30'
 application-label:'阅读'
@@ -52,7 +52,7 @@ Verifies / v1: true / v2: true
 - **正文净化对齐**（2.6.6，仅跟进文档）：服务端「替换·屏蔽」规则也作用于 `/api/m/content`，返回字段不变，客户端不改代码
 - **网页端新入口**（2.6.7，仅跟进文档）：离线缓存页、`/api/ebook/export`、`/api/update/check` 都只在网页端用，客户端不改代码
 - **IPv6 双栈**（2.6.8，仅跟进文档）：服务端改 `tcp.listen(PORT, '::')` 双栈监听、设置页多列公网 IPv6，`/api/m/info` 多一个 `ipv6Lans` 数组；客户端不改代码
-- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.6.8.1 / 2060801）
+- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.6.10.1 / 2061001）
 
 ## lean LEDE 更新日志与许愿（1.11 引入，仍在）
 

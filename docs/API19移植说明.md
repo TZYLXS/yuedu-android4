@@ -76,6 +76,17 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.6.10.1（versionCode 2061001）：仅跟进文档，无代码改动
+
+服务端 2.6.9 / 2.6.10 只改网页设置页的地址展示：IPv4 与 IPv6 分行、IPv6 独立一行并可单独复制；
+`docs/APP同步接口.md` 与 `docs/更新日志.md` 均未变，`server.js` 未动。本版代码与 2.6.8.1 一致，
+4.0 版自有差异原样保留（`openWebShelf` 拼 `/app/legado-web`、`rawServer` 判 `/app/`、
+`negativeButton(requireContext().getString(R.string.cancel))`、`serverBase` 的 path 分支）。
+
+- **2.6.9**：`web/app.js`「其它地址」拆成 IPv4 / IPv6 两行，复制按钮同时复制两类
+- **2.6.10**：IPv6 单独一行 + 独立复制按钮，IPv4 复制只复制 IPv4，并过滤 `::1` 回环
+- 契约复核：任务类型、超时 18 / 18 / 23 / 23 / 9 秒、`X-Api-Token`、传书 `X-Upload-Token`（现取）全部未变
+
 ## 2.6.8.1（versionCode 2060801）：仅跟进文档，无代码改动
 
 服务端 2.6.8 改 IPv4/IPv6 双栈监听、设置页多列公网 IPv6；`docs/APP同步接口.md` 零改动。本版代码与 2.6.7.1
