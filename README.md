@@ -9,7 +9,7 @@
 
 - 底座：`LegadoTeam/legado` tag `3.23.110211`（commit `56c3301dc441c23aaa75bac973943f7469c202be`）
 - 应用名：**阅读**（包名仍为 `io.legado.app`，会和官方版冲突，安装前先卸载官方版）
-- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.0.5.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
+- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_2.6.7.1.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
 - 用途：老平板 / 老手机当纯阅读器
 
 ## 兼容性
@@ -19,8 +19,8 @@
 | minSdkVersion | 19（Android 4.4） |
 | targetSdkVersion | 30 |
 | compileSdkVersion | 34 |
-| versionCode | 20005（2.0.5） |
-| versionName | `2.0.5` |
+| versionCode | 2060701（2.6.7.1） |
+| versionName | `2.6.7.1` |
 | 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
 | ABI | armeabi-v7a |
 | DEX | 5 个（`multiDexEnabled true` + `MultiDexApplication`） |
@@ -28,7 +28,7 @@
 已构建产物的校验结果：
 
 ```
-package: name='io.legado.api19' versionCode='20005' versionName='2.0.5'   # 见下文本版体积
+package: name='io.legado.api19' versionCode='2060701' versionName='2.6.7.1'   # 见下文本版体积
 sdkVersion:'19'
 targetSdkVersion:'30'
 application-label:'阅读'
@@ -46,7 +46,12 @@ Verifies / v1: true / v2: true
 - **目录分页**（2.0.3，仅跟进文档）：服务端 2.0.3/2.0.4 目录引擎分页上限 5→40、无 `nextTocUrl` 时按「下一页」兜底，客户端不改代码；实测同一本单书源从 50 章变成整本目录一次回完
 - **加书架即抓完整目录**（2.0.5/2.0.6，仅跟进文档）：服务端加入书架后立刻强制 refresh 抓全量目录（含分页），有手机在线优先走软总线，无设备或失败回落本机解析；客户端 `toc` 本来就每次现抓整本，不改代码
 - **缓存目录去重**（2.0.7/2.0.8/2.0.9，仅跟进文档）：服务端合并 `<下载目录>/cache` 里同一本书的重复目录、新增 `/api/cache/dedupe` 异步清理（跨书源按「书名+作者」归并），客户端不改代码
-- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.0.5 / 20005）
+- **`ebook-parse` 软总线任务**（2.0.6）：EPUB / MOBI 整本交手机解析，回传 `fnreader.ebook.v1` JSON 分片；PDF / TXT 仍由服务端解析
+- **目录先行 + 按章回传**（2.4.3）：先只回目录，正文按章按需补齐
+- **传书到飞牛**（2.4.4.1）：面板 ⑧ 选本机 pdf / mobi / azw3 / epub / txt 直推，令牌每次现取
+- **正文净化对齐**（2.6.6，仅跟进文档）：服务端「替换·屏蔽」规则也作用于 `/api/m/content`，返回字段不变，客户端不改代码
+- **网页端新入口**（2.6.7，仅跟进文档）：离线缓存页、`/api/ebook/export`、`/api/update/check` 都只在网页端用，客户端不改代码
+- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（2.6.7.1 / 2060701）
 
 ## lean LEDE 更新日志与许愿（1.11 引入，仍在）
 
@@ -61,9 +66,9 @@ Verifies / v1: true / v2: true
 - token 只存本机 SharedPreferences，不进备份；classic token 勾 `public_repo`，
   细粒度 token 需 `Contents` + `Pull requests` 读写，自动 fork 还要 `Repository creation`
 
-## 接入 FnReader（我的 → FnReader 服务器，①–⑤）
+## 接入 FnReader（我的 → FnReader 服务器，①–⑧）
 
-服务端 FnReader 2.0.x 起，面板五项与阅读Pro 一致；缓存上传、书源同步已改自动，不再占按钮：
+服务端 FnReader 2.0.x 起，面板八项与阅读Pro 一致；缓存上传、书源同步已改自动，不再占按钮：
 
 | 项 | 干什么 | 接口 |
 | --- | --- | --- |
@@ -72,6 +77,9 @@ Verifies / v1: true / v2: true
 | ③ | 打开飞牛阅读网页 | 内置浏览器（4.0 版地址拼 `/app/legado-web`） |
 | ④ | 接入手册 | 内置三份文档 |
 | ⑤ | 手机解析待命 | `/api/m/remote/pending` + `/api/m/remote/result` |
+| ⑥ | 接入书源桥（一个「飞牛书库」源读完所有） | 服务端生成的单品书源，`/api/m/legado/*` |
+| ⑦ | 查看软总线（哪台设备在代理解析） | `GET /api/bus` |
+| ⑧ | 传书到飞牛（本机电子书直推，令牌每次现取） | `GET /api/ebook/upload` + `POST /api/m/ebook/upload?name=…` |
 
 后台自动动作（连上即开启，每 5 分钟一轮）：
 

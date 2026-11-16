@@ -76,6 +76,22 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.6.7.1（versionCode 2060701）：仅跟进文档，无代码改动
+
+版本号按「服务端版号 + 0.0.0.1」对齐，一次覆盖服务端 2.0.6 – 2.6.7 的全部改动；代码与 2.4.4.1 完全一致，
+4.0 版自有差异原样保留（`openWebShelf` 拼 `/app/legado-web`、`rawServer` 判 `/app/`、
+`negativeButton(requireContext().getString(R.string.cancel))`、`serverBase` 的 path 分支）。
+
+- **2.6.6 / 2.6.7（本次跟进）**：服务端 `docs/APP同步接口.md` 零改动（33802 B / `e04f3466…`），
+  `docs/更新日志.txt` 新增这两段（`.md` 自 2.6.0 起服务端只写 `.txt`）
+  - 2.6.6：净化规则（替换·屏蔽）对 `/api/m/content` 同样生效，App 正文与网页一致；返回字段不变
+  - 2.6.7：网页端新增「离线缓存」页、`GET /api/ebook/export`、`GET /api/update/check`，App 侧无对应界面
+- **2.4.4.1（上一版）**：面板 ⑧ 传书到飞牛，令牌每次现取
+- **2.4.3**：目录先行 + 按章回传
+- **2.0.6**：`ebook-parse` 软总线任务（EPUB / MOBI 交手机解析）
+- 契约复核：任务类型仍为 `search` / `toc` / `content` / `rank` / `bookinfo`，超时 18 / 18 / 23 / 23 / 9 秒；
+  鉴权与上行回传字段未变
+
 ## 2.0.5（versionCode 20005）：仅跟进文档，无代码改动
 
 服务端 `docs/更新日志.md` 再新增 2.0.7 / 2.0.8 / 2.0.9 三段（都讲缓存目录去重），
