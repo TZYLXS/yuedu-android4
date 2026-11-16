@@ -76,6 +76,22 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.6.13.1（versionCode 2061301）：跟进 2.6.13 调试设备识别扩展
+
+服务端 2.6.13（`737cd6e`）把调试设备判定放宽：ID 追加 `busmon` / `monitor` / `mock` / `fake` / `e2e`，名称追加「监控」「测试机」；
+同时修掉调试工具把真实书籍目录写成 `http://debug.local/...` 的问题。接口形状、任务类型、超时、令牌均未变，
+A4 端与 Pro 逐条同构，**不动逻辑**，只对齐提示文案；A4 自有差异（`openWebShelf` 拼 `/app/legado-web`、`rawServer` 判 `/app/`、
+`negativeButton(requireContext().getString(R.string.cancel))`、`serverBase` 的 path 分支）原样保留。
+
+- **`FnReaderRemote.submit()`**：回传被忽略时抛出的失败原因改为「ID 含 bus-debug/busmon/monitor/mock/fake/e2e/debug，
+  或名称含「调试」「监控」「测试机」」
+- **`Pending` 的 KDoc**：同步写成 2.6.12 → 2.6.13 的判定演进
+- `FnReaderBridgeService` 的通知文案保持不变
+- **手机解析改多线程（本版新增）**：A4 面向上世纪的低性能机（典型 4 核 A53），改成三条真线程池——
+  `parseDispatcher` 固定 **2 条**（再多只会互相抢 CPU 并触发站点限流），`infoDispatcher` 独占封面与简介 1 条，
+  `ebookDispatcher` 独占整本解析；服务 `onDestroy` 时三者一起 `close()`
+- 字段表与自测清单见 `docs/app回传接受规范.md` §16
+
 ## 2.6.12.1（versionCode 2061201）：跟进 2.6.12 调试设备契约，改了 2 个文件
 
 服务端 2.6.12（`b85fb31`）给软总线加了「调试设备」判定：设备 ID 含 `bus-debug` / `debug`、或名称含「调试」即判为调试设备，
