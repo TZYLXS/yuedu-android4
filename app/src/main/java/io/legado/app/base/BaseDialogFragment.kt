@@ -13,6 +13,7 @@ import io.legado.app.R
 import io.legado.app.constant.AppLog
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.lib.theme.ThemeStore
+import io.legado.app.utils.applyEInkRecursively
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlin.coroutines.CoroutineContext
@@ -51,6 +52,14 @@ abstract class BaseDialogFragment(
             view.setOnClickListener { dismiss() }
         } else {
             view.setBackgroundColor(ThemeStore.backgroundColor())
+        }
+        if (io.legado.app.help.config.AppConfig.isEInkMode) {
+            // 对话框是独立窗口，单独关掉窗口动画，并递归处理列表动画/滚动条/过度滚动
+            dialog?.window?.setWindowAnimations(R.style.Animation_Activity_EInk)
+            view.applyEInkRecursively()
+            view.viewTreeObserver.addOnGlobalLayoutListener {
+                view.applyEInkRecursively()
+            }
         }
         onFragmentCreated(view, savedInstanceState)
         observeLiveBus()

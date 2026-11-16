@@ -14,4 +14,6 @@
 
     <item name="bettermovementmethod_highlight_background_span" type="id" />
 
+    <item name="tag_eink_configured" type="id" />
+
 </resources>

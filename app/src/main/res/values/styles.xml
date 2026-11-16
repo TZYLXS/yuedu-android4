@@ -18,6 +18,34 @@
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
+    <!-- E-Ink 电子墨水屏主题：无窗口转场、白底、无水波纹 -->
+    <style name="AppTheme.EInk" parent="Base.AppTheme">
+        <item name="actionBarStyle">@style/AppTheme.AppBarOverlay.Light</item>
+        <item name="android:windowAnimationStyle">@style/Animation.Activity.EInk</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <!-- 水波纹设为透明，点击不再留下灰色残影 -->
+        <item name="colorControlHighlight">@android:color/transparent</item>
+        <item name="colorButtonNormal">@android:color/white</item>
+    </style>
+
+    <!-- E-Ink 窗口转场：全部置空，避免翻页/切页闪烁残影 -->
+    <style name="Animation.Activity.EInk" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@null</item>
+        <item name="android:activityOpenExitAnimation">@null</item>
+        <item name="android:activityCloseEnterAnimation">@null</item>
+        <item name="android:activityCloseExitAnimation">@null</item>
+        <item name="android:taskOpenEnterAnimation">@null</item>
+        <item name="android:taskOpenExitAnimation">@null</item>
+        <item name="android:taskCloseEnterAnimation">@null</item>
+        <item name="android:taskCloseExitAnimation">@null</item>
+        <item name="android:wallpaperOpenEnterAnimation">@null</item>
+        <item name="android:wallpaperOpenExitAnimation">@null</item>
+        <item name="android:wallpaperCloseEnterAnimation">@null</item>
+        <item name="android:wallpaperCloseExitAnimation">@null</item>
+        <item name="android:wallpaperIntraOpenEnterAnimation">@null</item>
+        <item name="android:wallpaperIntraOpenExitAnimation">@null</item>
+    </style>
+
     <!-- Welcome主题 -->
     <style name="AppTheme.Welcome" parent="Base.AppTheme">
         <item name="android:windowNoTitle">true</item>

@@ -71,6 +71,15 @@ abstract class BaseActivity<VB : ViewBinding>(
         setupSystemBar()
         setContentView(binding.root)
         upBackgroundImage()
+        if (AppConfig.isEInkMode) {
+            // 墨水屏：每次布局变化后递归关掉列表动画/滚动条淡变/过度滚动（函数内部按 tag 去重）
+            window.decorView.viewTreeObserver.addOnGlobalLayoutListener {
+                window.decorView.applyEInkRecursively()
+            }
+            window.decorView.applyEInkRecursively()
+            // 兜底：即使主题窗口动画没生效，也强制去掉 Activity 转场
+            overridePendingTransition(0, 0)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             findViewById<TitleBar>(R.id.title_bar)
                 ?.onMultiWindowModeChanged(isInMultiWindowMode, fullScreen)
@@ -120,6 +129,12 @@ abstract class BaseActivity<VB : ViewBinding>(
     open fun onCompatOptionsItemSelected(item: MenuItem) = super.onOptionsItemSelected(item)
 
     open fun initTheme() {
+        if (AppConfig.isEInkMode) {
+            // E-Ink 模式：固定墨水屏主题（无窗口转场、白底、无水波纹），不再走昼夜分支
+            setTheme(R.style.AppTheme_EInk)
+            window.decorView.applyBackgroundTint(backgroundColor)
+            return
+        }
         when (theme) {
             Theme.Transparent -> setTheme(R.style.AppTheme_Transparent)
             Theme.Dark -> {
@@ -185,5 +200,8 @@ abstract class BaseActivity<VB : ViewBinding>(
     override fun finish() {
         currentFocus?.hideSoftInput()
         super.finish()
+        if (AppConfig.isEInkMode) {
+            overridePendingTransition(0, 0)
+        }
     }
 }

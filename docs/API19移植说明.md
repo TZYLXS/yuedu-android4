@@ -76,6 +76,31 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.6.18.1（versionCode 2061801）：跟进加权路由，新增 cover/intro 与幂等识别
+
+服务端 2.6.17 / 2.6.18（`b639ec2..ecf040`）把软总线升级为加权路由，本版有真实代码改动；同时新增 E-ink 墨水屏优化。
+
+- **2.6.17 机制**：任务分 `book`（search/toc/rank）、`content`（content/ebook）、`media`（cover/intro/bookinfo）三类；
+  设备隐藏性能分 0–100（初始 50，成功 +4、失败 −8、>8s 再 −2，不对外暴露），高分（>=55）可领全部类、在途上限 3，
+  低分（<55）只领 media、上限 2；无高分设备在线时自动放开全部任务。领取即锁定 30 秒；权重计算独立成纯函数 `busweights.js`，异常降级。
+- **2.6.18 修复**：在途数按实际锁定任务重算，修掉 inflight 泄漏卡死设备；隐藏分从 `/api/bus` 移除，新增 `highScore`/`lowScore` 计数。
+
+本端落实（`FnReaderRemote.kt` + `FnReaderBridgeService.kt`）：
+
+- 新增 `cover` / `intro` 任务，payload 与 bookinfo 相同 `{bookUrl, source, name, author}`：抽出 `fetchMediaBook()`，
+  bookinfo/cover/intro 共用同一次 `WebBook.getBookInfoAwait`；`cover()` 只回 `{coverUrl}`，`intro()` 回简介与元数据，
+  拿不到的字段省略；不支持时服务端自动回退 bookinfo。
+- `submit()` 识别幂等字符串态：`ok:"duplicate"`/`"stale"` 正常返回不重试，`ignored` 仍按调试设备失败抛出。
+- 队列路由：`bookinfo`/`cover`/`intro` 统一进 info 队列；本端保持低性能机口径（检索 2 线程、简介 1 线程），超时不变（18/18/23/23/9 秒）。
+
+E-ink 墨水屏优化（无厂商 SDK 依赖，通用方案）：
+
+- 新增 `utils/EInkUtils.kt`：递归遍历视图，关闭 RecyclerView 项动画、所有可滚动 View 的过度滚动（边缘回弹光晕）与滚动条淡入淡出，
+  ListView 缓存底色固定为白；用 tag 去重，可在全局布局回调里反复调用而不重复配置。
+- 新增主题 `AppTheme.EInk` 与无动画窗口样式 `Animation.Activity.EInk`：窗口转场全部置空、白底、`colorControlHighlight` 透明（水波纹不可见）。
+- `BaseActivity` 在 E-ink 模式固定该主题，注册全局布局监听并 `overridePendingTransition(0,0)`；`BaseDialogFragment` 关闭对话框窗口动画并同样递归处理。
+- 入口：「我的 → 主题模式 → E-Ink 模式」（themeMode 值 3，复用既有开关，阅读页本就有独立的墨水屏底色/黑字/无翻页动画配置）。
+
 ## 2.6.16.1（versionCode 2061601）：仅跟进文档，无代码改动
 
 服务端 2.6.14 / 2.6.15 / 2.6.16 三版（`737cd6e..b639ec2`）全是服务端侧改动，客户端契约零变化：
