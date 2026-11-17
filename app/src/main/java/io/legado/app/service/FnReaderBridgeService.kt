@@ -66,6 +66,9 @@ class FnReaderBridgeService : BaseService() {
          */
         private val searchConcurrency: Int by lazy { 2 }
 
+        /** 低配机只给 TOC 一条独立线程，避免与搜索互抢，同时控制内存 */
+        private val tocConcurrency: Int by lazy { 1 }
+
         /** 封面 / 简介专用线程数：低配机只开 1 条，但保证它不排在检索任务后面 */
         private val infoConcurrency: Int by lazy { 1 }
 
@@ -125,20 +128,21 @@ class FnReaderBridgeService : BaseService() {
      * - 简介队列（只装 bookinfo，补简介与封面）：单并发，永远不排在检索任务后面。
      */
     private val searchQueue = Channel<QueuedJob>(Channel.UNLIMITED)
+    private val tocQueue = Channel<QueuedJob>(Channel.UNLIMITED)
     private val infoQueue = Channel<QueuedJob>(Channel.UNLIMITED)
 
     /** 电子书解析单独一条队列：解析整本书很吃 CPU，不能挤掉搜索/正文任务 */
     private val ebookQueue = Channel<QueuedJob>(Channel.UNLIMITED)
 
     /**
-     * 三条真正的线程池（不是协程默认调度器）：
-     * - parse：检索/目录/正文/榜单并行解析，A4 固定 2 条线程；
-     * - info：封面与简介独占 1 条线程，检索再忙也不会把补简介排到最后；
-     * - ebook：整本解析独占一个线程，避免和其他解析抢 CPU。
+     * 搜索、TOC、简介与电子书分别调度；低配机 TOC 固定单线程，避免额外争抢 CPU。
      */
     private val parseDispatcher = Executors.newFixedThreadPool(
         searchConcurrency
     ) { r -> Thread(r, "fnreader-parse").apply { isDaemon = true } }.asCoroutineDispatcher()
+    private val tocDispatcher = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "fnreader-toc").apply { isDaemon = true }
+    }.asCoroutineDispatcher()
     private val infoDispatcher = Executors.newFixedThreadPool(
         infoConcurrency
     ) { r -> Thread(r, "fnreader-info").apply { isDaemon = true } }.asCoroutineDispatcher()
@@ -184,6 +188,7 @@ class FnReaderBridgeService : BaseService() {
         loopJob?.cancel()
         loopJob = null
         runCatching { parseDispatcher.close() }
+        runCatching { tocDispatcher.close() }
         runCatching { infoDispatcher.close() }
         runCatching { ebookDispatcher.close() }
         super.onDestroy()
@@ -204,6 +209,11 @@ class FnReaderBridgeService : BaseService() {
                     for (item in searchQueue) {
                         runJob(item.base, item.token, item.job, item.onlineText)
                     }
+                }
+            }
+            launch(tocDispatcher) {
+                for (item in tocQueue) {
+                    runJob(item.base, item.token, item.job, item.onlineText)
                 }
             }
             launch(infoDispatcher) {
@@ -305,6 +315,7 @@ class FnReaderBridgeService : BaseService() {
                         "ebook-parse" -> ebookQueue.trySend(item)
                         // 目录先行（toc-only）之后，飞牛按需来要某一章
                         "ebook-chapter" -> ebookQueue.trySend(item)
+                        "toc" -> tocQueue.trySend(item)
                         else -> searchQueue.trySend(item)
                     }
                 }
