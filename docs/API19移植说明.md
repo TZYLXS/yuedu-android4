@@ -76,6 +76,17 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 2.6.30.1（versionCode 2063001）：软总线 2.6.19 / 上游 3.0.0 协议跟进
+
+上游 `78231d1`（3.0.0）把软总线升级为「按类额度 + 超时建模」，本版有真实代码改动（与阅读Pro 同构）：
+
+- `FnReaderRemote.Job` 增加 `timeoutMs`，`poll()` 上报 `cores` / `mem` / `inflight` / `supports`；
+- `FnReaderBridgeService` 新增 `budgetOf(job)`，按服务端预算收手（留 500 ms、不低于 3 秒）；
+  `cover` / `intro` 独立 7 秒预算，不再落默认 20 秒；
+- A4 的并发值仍固定：`searchConcurrency=2`、`tocConcurrency=1`、`infoConcurrency=1`，
+  上报 `inflight` 即三者之和；
+- 版本号重定为 `2.6.30.1`（2063001），避免按旧规则算出 2.6.3.1 被判降级。
+
 ## 2.6.18.2（versionCode 2061802）：仅跟进文档，无代码改动
 
 上游 `ecf0408..c3922a3` 只有两份文档提交（`6bfdbdc6`、`c3922a35`），修改 `AGENTS.md` 与 `docs/软总线调试APK.md`：
@@ -122,7 +133,7 @@ E-ink 墨水屏优化（无厂商 SDK 依赖，通用方案）：
 核对结果：`docs/APP同步接口.md` 与 `docs/更新日志.md` 本轮零改动，`remote.js` 未改 → `/api/m/*` 路径、字段、令牌、
 任务类型、超时全部照旧；A4 的 2 条解析线程 / 1 条简介线程 / 1 条电子书线程设定不受影响。
 
-本版客户端代码零改动，只同步版本号、updateLog 与文档。本机实测：MuMu 装包后连上 `http://10.5.4.70:1122`，服务端在线。
+本版客户端代码零改动，只同步版本号、updateLog 与文档。本机实测：MuMu 装包后连上 `http://IP:1122`，服务端在线。
 
 ## 2.6.13.1（versionCode 2061301）：跟进 2.6.13 调试设备识别扩展
 
