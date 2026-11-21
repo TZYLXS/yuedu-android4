@@ -76,6 +76,17 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 3.0.2.1（versionCode 3000201）：按 3.0.x 客户端适配清单补齐自动回传
+
+服务端已到 `3.0.2`，本版与阅读Pro 同构，按 `3.0.x更新与客户端适配清单.md` 补齐自动化回传：
+
+- 加书/改书：`Book.save()` 后 2 秒防抖 `POST /api/m/books`；
+- 阅读进度：`ReadBook.saveRead()` 后 3 秒防抖 `POST /api/m/progress`，服务层每轮再按水位批量 `/progress/batch`；
+- 封面：新增独立 `POST /api/m/cover`，`{bookUrl,mime,data:"data:image/...;base64,..."}`，单张 8 MB，404 自动停用；
+- 书源：自动同步带本机快照与 `deleted` 队列，旧书源 `lastUpdateTime<=0` 自动补时间戳；
+- 自动补书：本机有、服务端没有的书按书名归一化去重后回传，同名不同源跳过；
+- 版本号按「服务端版号 + 0.0.0.1」对齐为 `3.0.2.1` / `3000201`。
+
 ## 2.6.30.1（versionCode 2063001）：软总线 2.6.19 / 上游 3.0.0 协议跟进
 
 上游 `78231d1`（3.0.0）把软总线升级为「按类额度 + 超时建模」，本版有真实代码改动（与阅读Pro 同构）：

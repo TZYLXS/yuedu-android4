@@ -1,50 +1,36 @@
-## 安卓 4.0 版 2.6.18.2（versionCode 2061802）
+## 安卓 4.0 版 3.0.2.1（versionCode 3000201）
 
-Legado 移植版，**minSdk 19 / targetSdk 30**（Android 4.4–5.1），单包 `armeabi-v7a`、多 Dex，
-应用名「阅读」，包名 `io.legado.api19`（与官方版 `io.legado.app` 冲突，安装前先卸官方版）。
-与 **阅读Pro（`io.legado.pro`）2.6.18.2** 同步发布、同一套版本号；版号基线取自服务端 `legado-web` **v2.6.18**。
+Legado（阅读）`3.23.110211` 编译，**minSdk 19 / targetSdk 30**（Android 4.4–5.1），单包 **armeabi-v7a**，MultiDex。
+应用名「阅读」，包名 `io.legado.api19`，与阅读Pro `io.legado.pro` 可共存安装。
+与 **阅读Pro 3.0.2.1** 同步发布、同一套版本号；版号按服务端 FnReader **3.0.2 + 0.0.0.1** 对齐。
 
-### 本版仅跟进文档，无代码改动
+### 按 3.0.x 客户端适配清单补齐自动回传（与 Pro 同构）
 
-上游 `ecf0408..c3922a3` 有 2 个提交、2 个文件变化：
-
-- `6bfdbdc6`：`AGENTS.md` 新增上游环境专用的工具调用约定（+11），与安卓客户端接口无关
-- `c3922a35`：`docs/软总线调试APK.md` 新增 §6.3（+29），补充 `GET /api/bus` 在线设备字段与历史实测快照
-
-新增说明的 `devices[]` 字段为 `id`、`name`、`model`、`version`、`lastSeen`、`handled`、`enabled`、`debug`、`online`、`idle`，
-顶层另有 `pending`、`recent`、`usage`。这些都是面板⑦的只读信息，客户端现有 `GET /api/bus` 调用不需要修改。
-
-三份重点文档 blob 与 2.6.18 基线一致：`APP同步接口.md` = `6b9b701f…`、`更新日志.md` = `84c99abc…`、
-`更新日志.txt` = `f1099dcb…`；compare 不含 `remote.js` / `server.js`，所以 `/api/m/*` 路径、字段、鉴权、任务类型与超时均无变化。
-
-**文档口径校正**：`cover` / `intro` 在 `timeoutOf()` 中没有独立分支，当前实际使用 default **20 秒**；
-`bookinfo` 独立分支仍为 9 秒。本版只把 README 与接入文档中的 cover/intro 超时改为 20 秒，没有修改客户端代码。
-A4 的 2 条检索线程、1 条简介线程与 E-ink 优化保持原样。
-
-### 文档同步
-
-- `README.md`、`docs/API19移植说明.md`、`docs/飞牛书库接入.md` 更新到本版并补充 `/api/bus` 字段表
-- `docs/app回传接受规范.md` 新增 §19，本地正本与两仓 docs 三份副本 SHA256 一致
-- 应用内 `assets/updateLog.md` 顶部新增 `**2026/11/17（2.6.18.2）**`，旧段落保留
+- **加书/改书自动回传**：`Book.save()` 后 2 秒防抖 `POST /api/m/books`；未配置服务器时内部跳过。
+- **阅读进度自动回传**：`ReadBook.saveRead()` 后 3 秒防抖 `POST /api/m/progress`；服务层每轮按 `fnReaderProgressSyncedMs` 水位批量 `POST /api/m/progress/batch`。
+- **独立封面上传**：新增 `POST /api/m/cover`，`{bookUrl,mime,data:"data:image/...;base64,..."}`，单张上限 8 MB；404 时自动停用。
+- **书源双向同步补齐删除**：自动同步先读本机快照，本机删除的书源写入 `deleted` 数组；`lastUpdateTime<=0` 自动补当前时间戳。
+- **自动补书**：本机有、服务端没有的书按书名归一化去重后回传，同名不同源跳过。
+- **应用内更新兼容四段版本号**：`AppUpdateGitHub.versionCodeOf()` 支持四段，`v3.0.2.1` 正确换算为 `3000201`。
 
 ### 包信息
 
 | 产物 | 体积 | SHA256 |
 | --- | --- | --- |
-| `yuedu_app_2.6.18.2.apk` | 19 941 506 B（19.02 MB） | `1092B8E74538EC78D3548901F2E0C95EBE1D21D45DE5C3DD5A5AFB9CF91B01AE` |
+| `yuedu_app_3.0.2.1.apk` | 19 954 016 B（19.03 MB） | `DCEC0C2B0D45E8D779B4593802AE4C1A0B77330D3B7DB643BDD087483C209534` |
 
-- `aapt2 dump badging`：`versionCode='2061802' versionName='2.6.18.2'`，无 `application-debuggable`
-- 包内 `assets/updateLog.md` 首条已用 Python zipfile 核对为 `**2026/11/17（2.6.18.2）**`
-- 签名沿用 `keystore/yuedu.jks`（v1 + v2），可直接覆盖安装旧版
+- `aapt2 dump badging`：`versionCode='3000201' versionName='3.0.2.1'`，`sdkVersion 19` / `targetSdkVersion 30`，无 `application-debuggable`
+- `apksigner verify`：v1 true / v2 true，签名证书 `CN=FnReader YueDu`
+- 包内 `assets/updateLog.md` 首条为 `**2026/11/22（3.0.2.1）**`
 
 ### 安装方式
 
-1. 下载 `yuedu_app_2.6.18.2.apk`（Android 4.4–5.1 老机型 / 安卓墨水屏，32 位）
-2. 覆盖安装升级，书源与书架数据保留
-3. 进入「我的 → 接入 FnReader 服务器」，填服务端地址与 `X-Api-Token`；墨水屏可到「主题模式」选「E-Ink 模式」
+1. 下载 `yuedu_app_3.0.2.1.apk`
+2. 覆盖安装即可升级，书源与书架数据保留
+3. 进入「我的 → 接入 FnReader 服务器」，填服务端地址与 `X-Api-Token`
 
-### 自测与限制
+### 说明
 
-- 编译：Gradle `-Xmx2048m` + Kotlin `-Xmx1536m` + `--max-workers=2`，**2m41s**，exit 0
-- MuMu 模拟器：覆盖安装成功，`dumpsys` 显示 2061802 / 2.6.18.2，首启更新日志显示本版
-- 本版未改代码，未重复执行全量书架同步；真机实派 cover/intro、构造 duplicate/stale 与 E-ink 真机残影观察仍是既有待测项
+- 自动回传依赖「接入 FnReader 服务器」已开启且地址 / token 有效；未开启时钩子直接返回。
+- 首次启用后进度水位从 0 开始，会把已有阅读记录补推一遍，之后只推增量。
+- 封面接口只处理本机文件封面（PNG/JPEG/GIF/WebP），在线 `http(s)` 封面仍随 books 的 `coverUrl` 下发。
