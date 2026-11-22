@@ -214,6 +214,29 @@ class FnReaderConfigDialog : BaseDialogFragment(R.layout.dialog_fnreader_config)
                     + "不用挂 WebDAV；上传令牌每次现取（GET /api/ebook/upload），"
                     + "服务端重置过传书令牌也不用改这里，传完飞牛自动入库并派给本机解析"
         ) { pickEbookFile.launch(UPLOAD_MIMES) }
+        addMethod(
+            "⑨ 立即同步（书源 + 缓存）",
+            "马上跑一轮书源双向同步和缓存上传：结果单独弹「FnReader 同步结果」通知，"
+                    + "同时写入「同步记录」，不会被手机解析常驻通知覆盖"
+        ) { syncNow() }
+        addMethod(
+            "⑩ 同步记录（最近 50 条）",
+            "查看每轮上传 / 下载 / 删除数量、飞牛总数、耗时与失败原因；"
+                    + "杀进程或重启后仍保留，通知被覆盖也能回看"
+        ) { startActivity<FnReaderSyncLogActivity>() }
+    }
+
+    private fun syncNow() {
+        val base = requireServerAndToken() ?: return
+        binding.tvStatus.text = "同步中…（书源 + 缓存）"
+        execute { FnReaderAutoSync.run(base, token()) }
+            .onSuccess { r ->
+                binding.tvStatus.text = r.summary().ifEmpty { "同步完成" }
+                toastOnUi(r.countText())
+            }
+            .onError {
+                toastOnUi("同步失败：${FnReaderRemote.describeError(it)}")
+            }
     }
 
     private fun bridgeOn(): Boolean = getPrefString(KEY_BRIDGE, "0") == "1"
