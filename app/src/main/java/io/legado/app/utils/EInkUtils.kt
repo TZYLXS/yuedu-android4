@@ -31,9 +31,13 @@ fun View.applyEInkRecursively() {
 }
 
 private fun View.applyEInkSelf() {
-    // 所有可滚动 View：关闭过度滚动（边缘回弹光晕），滚动条不再淡入淡出
+    // 所有可滚动 View：关闭过度滚动（边缘回弹光晕）
     overScrollMode = View.OVER_SCROLL_NEVER
-    isScrollbarFadingEnabled = false
+    // 墨水屏不需要滚动条。注意不能只调用 isScrollbarFadingEnabled = false：
+    // 它会在没有滚动条 drawable 的 View 上创建 ScrollCache 并把状态置为 ON，
+    // 后续 onDrawScrollBars 对 null 的 ScrollBarDrawable 调 mutate() 会 NPE。
+    isVerticalScrollBarEnabled = false
+    isHorizontalScrollBarEnabled = false
     when (this) {
         is RecyclerView -> {
             // 列表增删改不再播放默认动画，避免墨水屏残影
