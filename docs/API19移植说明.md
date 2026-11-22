@@ -76,6 +76,18 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 3.2.0.1（versionCode 3200001）：同步服务端 3.2.0，菜单重设计与 E-Ink 崩溃修复
+
+服务端 `3.1.4 → v3.2.0`（main `4392041`），客户端 `/api/m/*` 契约未变。本版与阅读Pro 同构，并保留 A4 自有差异：
+
+- `docs/APP同步接口.md` 仅新增「多客户端 / 多书源并发合并（0.1.25+）」说明：同书按 workId 归并、章节取并集、同章不同正文保留 variants、`raw/<srcHash>/` 分开存放、响应字段 `sources/added/merged/duplicates/splitMismatch` 沿用现有契约；无新增客户端必填字段
+- `docs/软总线路由与权重.md`、`docs/AI构建指南.md` 在 v3.2.0 未变化
+- 服务端 3.2.0 主要变更：多源缓存合并、新增「书籍」页与本地 `.nb` 缓存清单、设置页重排、IPv6 独立成行、书源导入链接修复、增量哈希/流式导出/Python 池扩核、修复阅读接入详情 404
+- 客户端本版：FnReader 同步通知分道、同步记录页、空书源过滤；配置菜单改分组列表（IP/TOKEN 弹框、TOC/TRE 滑动开关、单行动作与进度框）
+- A4 修复：E-Ink 优化不再调用 `isScrollbarFadingEnabled=false`，改为直接关闭垂直/水平滚动条，避免无 drawable 的 `ScrollCache` 在首绘时对 null `ScrollBarDrawable` 调 `mutate()` 崩溃
+- A4 保留 `openWebShelf` 的 `/app/legado-web`、`rawServer` 判 `/app/`、`serverBase` 的 path 分支与 `negativeButton` 文案
+- 版本按「服务端版号 + 0.0.0.1」：`3.2.0` → `3.2.0.1` / `3200001`
+
 ## 3.1.4.1（versionCode 3010401）：同步服务端 3.1.4，修复书源 404 永久跳过
 
 服务端从 `3.0.10` 连发到 `v3.1.4`（tag/main `b230d8e`），客户端 `/api/m/*` 契约未变。本版与阅读Pro 同构，并保留 A4 自有差异：
