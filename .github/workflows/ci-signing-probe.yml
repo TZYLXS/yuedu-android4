@@ -1,0 +1,38 @@
+name: signing-probe
+
+on:
+  push:
+    branches:
+      - release/3.1.4.1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check secret presence only
+        env:
+          A1: ${{ secrets.RELEASE_KEY_STORE }}
+          A2: ${{ secrets.KEYSTORE_BASE64 }}
+          A3: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          A4: ${{ secrets.YUEDU_KEYSTORE_BASE64 }}
+          A5: ${{ secrets.RELEASE_STORE_BASE64 }}
+          A6: ${{ secrets.ACTIONS_TOKEN }}
+          A7: ${{ secrets.GH_PAT }}
+          A8: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          found=0
+          for n in RELEASE_KEY_STORE KEYSTORE_BASE64 SIGNING_KEYSTORE_BASE64 YUEDU_KEYSTORE_BASE64 RELEASE_STORE_BASE64; do
+            eval v=\${$n}
+            if [ -n "$v" ]; then echo "$n: PRESENT"; found=1; else echo "$n: MISSING"; fi
+          done
+          token=0
+          for n in ACTIONS_TOKEN GH_PAT RELEASE_TOKEN; do
+            eval v=\${$n}
+            if [ -n "$v" ]; then echo "$n: PRESENT"; token=1; else echo "$n: MISSING"; fi
+          done
+          echo "SIGNING_FOUND=$found TOKEN_FOUND=$token"
+          if [ "$found" -eq 0 ]; then exit 1; fi
