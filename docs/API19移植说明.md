@@ -76,6 +76,17 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 3.1.4.1（versionCode 3010401）：同步服务端 3.1.4，修复书源 404 永久跳过
+
+服务端从 `3.0.10` 连发到 `v3.1.4`（tag/main `b230d8e`），客户端 `/api/m/*` 契约未变。本版与阅读Pro 同构，并保留 A4 自有差异：
+
+- 3.1.0–3.1.4：TOC 规范化转 Python，兼容 Python 3.9 / `vendor39`；电子书扫描跳过 cache/covers/tmp；清理失效书架条目；`linkLocalEbooksToShelf` 在索引为空时先清幽灵书再补索引
+- `docs/APP同步接口.md` blob 仍为 `f4b8c9f957a1d609eb0a231123fadaa196ec5644`；`docs/软总线路由与权重.md` 仅新增服务端回传解析容错说明，无新增客户端必填字段
+- 客户端修复：`FnReaderAutoSync.runSources` 遇 404 改为 6 小时时间戳退避，成功同步后清除标记；旧值 `1` 自动按过期处理
+- 新增 `docs/客户端书源反向同步.md`：`POST /api/m/sources`、`GET/POST /api/m/sources/sync`、5 分钟自动同步与验收步骤
+- A4 保留 `openWebShelf` 的 `/app/legado-web`、`rawServer` 判 `/app/`、`serverBase` 的 path 分支与 `negativeButton` 文案
+- 版本按「服务端版号 + 0.0.0.1」：`3.1.4` → `3.1.4.1` / `3010401`
+
 ## 3.0.10.1（versionCode 3001001）：同步服务端 3.0.10，无客户端代码改动
 
 服务端从 `3.0.8` 连发到 `v3.0.10`（tag `255c51c`）。本版与阅读Pro 同构，仅同步服务端版号：
