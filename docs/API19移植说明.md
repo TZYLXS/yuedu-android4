@@ -76,6 +76,14 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 3.4.2.2（versionCode 3400202）：修「检查更新」永远提示已是最新
+
+- 现象：旧版（3.2.0.1 / 3.3.5.1）点「检查更新」恒提示「已是最新版本」，而远端最新已是 `v3.4.2.1`
+- 根因：`AppUpdateGitHub.versionCodeOf()` 次版本乘 `10000`，`build.gradle` 的 versionCode 次版本乘 `100000`（`3.4.2.1 → 3400201`），解析值恒小于当前 versionCode
+- 修复：`大版本*1000000 + 次版本*100000 + 修订*100 + 构建`，与 `build.gradle` 同口径；A4 与 Pro 同步改，A4 自有差异（`/app/legado-web`、`rawServer`、`serverBase` path 分支、`negativeButton`）未动
+- 验证：json-path 2.8.0 探针复算 `versionCodeOf("v3.4.2.1") = 3400201` > `3300501`（3.3.5.1），可正常提示更新
+- 版本：服务端仍 `3.4.2`，客户端构建号 `3.4.2.2` / `3400202`；已装旧版需手动下载一次才能升上来
+
 ## 3.4.2.1（versionCode 3400201）：同步服务端 3.4.2，本地书绑定回执
 
 - 上游 FnReader `v3.4.1`（main `fa03949`）；服务端实际运行 `3.4.2`，API 与 `3.4.1` 一致

@@ -9,7 +9,7 @@
 
 - 底座：`LegadoTeam/legado` tag `3.23.110211`（commit `56c3301dc441c23aaa75bac973943f7469c202be`）
 - 应用名：**阅读**（包名仍为 `io.legado.app`，会和官方版冲突，安装前先卸载官方版）
-- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_3.4.2.1.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
+- 产物：`dist/yuedu_app_<version>.apk`（当前 `yuedu_app_3.4.2.2.apk`），v1 + v2 双签，armeabi-v7a，MultiDex
 - 用途：老平板 / 老手机当纯阅读器
 
 ## 兼容性
@@ -19,8 +19,8 @@
 | minSdkVersion | 19（Android 4.4） |
 | targetSdkVersion | 30 |
 | compileSdkVersion | 34 |
-| versionCode | 3400201（3.4.2.1） |
-| versionName | `3.4.2.1` |
+| versionCode | 3400202（3.4.2.2） |
+| versionName | `3.4.2.2` |
 | 签名 | v1 (JAR) + v2，`apksigner verify` 通过 |
 | ABI | armeabi-v7a |
 | DEX | 5 个（`multiDexEnabled true` + `MultiDexApplication`） |
@@ -28,7 +28,7 @@
 已构建产物的校验结果：
 
 ```
-package: name='io.legado.api19' versionCode='3400201' versionName='3.4.2.1'   # 见下文本版体积
+package: name='io.legado.api19' versionCode='3400202' versionName='3.4.2.2'   # 见下文本版体积
 sdkVersion:'19'
 targetSdkVersion:'30'
 application-label:'阅读'
@@ -59,7 +59,7 @@ Verifies / v1: true / v2: true
   关闭 Activity/对话框转场、列表项动画、水波纹、滚动条淡变与边缘回弹，白底黑字，减少残影与全屏刷新；新增 `utils/EInkUtils.kt` 与 `AppTheme.EInk` 主题
 - **软总线设备字段说明**（2.6.18.2，仅跟进文档）：上游补充 `/api/bus` 设备字段与调试快照，客户端契约零变化、代码未改
 - **软总线按类额度 / 超时建模**（2.6.19 / 上游 3.0.0）：`pending` 下发 `timeoutMs`/`serverTime`，客户端上报 `cores`/`mem`/`inflight`/`supports`；本端按预算收手，封面/简介 7s、bookinfo 9s、默认 20s，老服务端自动回落
-- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（3.4.2.1 / 3400201，按服务端 3.4.2 对齐；本版跟进 §17.2.2 本地书绑定与 `bound`/`pending` 回执）
+- 启动页换成「飞牛阅读」竖版毛笔字；版本号与阅读Pro 同步（3.4.2.2 / 3400202，按服务端 3.4.2 对齐；本版跟进 §17.2.2 本地书绑定与 `bound`/`pending` 回执）
 
 ## lean LEDE 更新日志与许愿（1.11 引入，仍在）
 
