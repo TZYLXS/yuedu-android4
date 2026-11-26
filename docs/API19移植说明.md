@@ -76,6 +76,14 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
+## 3.3.5.1（versionCode 3300501）：同步服务端 3.3.5，书源分页与本地书回传
+
+- 上游 FnReader `v3.3.5`（main `7adf7fe`）；`docs/APP同步接口.md` 新增 §17.2.1，`/api/m/*` 无新增必填字段
+- 书源同步分页循环（`nextSince`/`truncated`），`pull` 改字段级合并，保留本地启用/分组/排序/响应时间
+- 本地书（txt/epub/pdf）进度回传带 `localFile`/`fileName`，服务端扫 ebook 目录按文件名绑定
+- A4 自有差异保持：`openWebShelf` 走 `/app/legado-web`、`rawServer` 判 `/app/`、`serverBase` 的 path 分支、`negativeButton` 文案
+- 版本按「服务端版号 + 0.0.0.1」：`3.3.5` → `3.3.5.1` / `3300501`
+
 ## 3.2.0.1（versionCode 3200001）：同步服务端 3.2.0，菜单重设计与 E-Ink 崩溃修复
 
 服务端 `3.1.4 → v3.2.0`（main `4392041`），客户端 `/api/m/*` 契约未变。本版与阅读Pro 同构，并保留 A4 自有差异：
