@@ -76,12 +76,13 @@ lint -appRelease:
 - API 21 主题属性（`?attr/colorSurface` 之类）没有单独挪 `values-v21`：本 tag 的资源里不存在这类属性，无需处理。
 - 4.4 上 `ExoPlayer` 音频、扫码、libarchive 三类功能不可用（见 README「已知限制」）。
 
-## 3.4.0.1（versionCode 3400001）：仅同步服务端 3.4.0，无客户端代码改动
+## 3.4.2.1（versionCode 3400201）：同步服务端 3.4.2，本地书绑定回执
 
-- 上游 FnReader `v3.4.0`（main `d2e059f`）；`docs/APP同步接口.md`、`docs/软总线路由与权重.md`、`docs/AI构建指南.md` 与 `3.3.5` 完全一致
-- 服务端变化：随包内置 Node 运行时 v22.12.0、去掉 nodejs_v26 依赖、正文兜底与替换规则误伤保护、封面客户端优先/死链过滤、书源同步分页与类型规范化、软总线设备计数与负载均衡
-- 客户端无需改动：3.3.5.1 的分页同步、字段级合并、本地书 `localFile`/`fileName` 回传继续有效；A4 自有差异（`/app/legado-web`、`rawServer` 判 `/app/`、`serverBase` path 分支）未动
-- 版本按「服务端版号 + 0.0.0.1」：`3.4.0` → `3.4.0.1` / `3400001`
+- 上游 FnReader `v3.4.1`（main `fa03949`）；服务端实际运行 `3.4.2`，API 与 `3.4.1` 一致
+- 协议新增 §17.2.2：`/api/m/books`、`/api/m/progress/batch` 接受 `localFile`/`fileName`，绑 `ebook://<sha1>` 或登记 pending，响应带 `bound`/`pending`
+- 客户端改动：`pushBooks`/`pushProgress` 返回 `[added|updated, bound, pending]`，摘要新增「已绑定 N 本、待扫描 M 本」；A4 同步补上「本地书 N 本」摘要行
+- A4 自有差异未动：`openWebShelf` 走 `/app/legado-web`、`rawServer` 判 `/app/`、`serverBase` 的 path 分支、`negativeButton` 文案
+- 版本按「服务端版号 + 0.0.0.1」：`3.4.2` → `3.4.2.1` / `3400201`（3.4.0.1 为过渡版，已由 prune 清退）
 
 ## 3.3.5.1（versionCode 3300501）：同步服务端 3.3.5，书源分页与本地书回传
 
